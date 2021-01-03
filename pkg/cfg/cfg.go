@@ -17,4 +17,6 @@ type LunCfg struct {
 }
 
 type TargetCfg struct {
+	TargetId  string
+	TargetIQN string
 }

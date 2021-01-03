@@ -5,7 +5,7 @@ PWD = $(shell pwd)
 USER = $(shell whoami)
 buildTime = $(shell date +%Y-%m-%dT%H:%M:%S%z)
 PROJ_NAME = iscsi-target-api
-RELEASE_TAG = v0.4.3
+RELEASE_TAG = v0.1
 DOCKER_REPO = ogre0403
 
 ifeq ($(RET),0)
@@ -21,6 +21,9 @@ run:
 	go build -mod=vendor  -ldflags '-X "main.buildTime='"${buildTime}"'" -X "main.commitID='"${COMMIT}"'"'  -o bin/${PROJ_NAME} cmd/main.go
 	./bin/${PROJ_NAME} \
 	--logtostderr=true --v=2
+
+test:
+	go test  ./...  -v  -cover -count=1 --logtostderr=true
 
 
 clean:
