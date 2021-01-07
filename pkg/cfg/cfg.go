@@ -18,6 +18,7 @@ type LunCfg struct {
 	Volume    *VolumeCfg
 }
 
+// Deprecated:
 type TargetCfg struct {
 	TargetId  string
 	TargetIQN string

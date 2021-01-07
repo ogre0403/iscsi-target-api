@@ -16,10 +16,11 @@ var mgr tgtd
 func init() {
 
 	mgr = tgtd{
-		BaseImagePath:  "/var/lib/iscsi/",
-		tgtadmCmd:      TGTADM,
+		BaseImagePath:  BASEIMGPATH,
+		tgtadminCmd:    TGTADMIN,
 		tgtimgCmd:      TGTIMG,
 		tgtsetuplunCmd: TGTSETUPLUN,
+		targetConf:     TARGETCONF,
 	}
 }
 
@@ -56,7 +57,9 @@ func TestTgtd_CreateTarget(t *testing.T) {
 	}
 
 	err := mgr.CreateTarget(tc)
-	assert.NoError(t, err)
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New("not supported"), err)
+	}
 
 	t.Cleanup(func() {
 		cmd := exec.Command("/bin/sh", "-c",
@@ -101,4 +104,43 @@ func TestTgtd_AttachLun(t *testing.T) {
 		)
 		cmd.Run()
 	})
+}
+
+func TestTgtd_Reload(t *testing.T) {
+	vc := &cfg.VolumeCfg{
+		Name: "test.img",
+		Size: "100m",
+	}
+
+	lc := &cfg.LunCfg{
+		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
+		Volume:    vc,
+	}
+
+	err := mgr.CreateVolume(vc)
+	assert.NoError(t, err)
+
+	fullImgPath := mgr.BaseImagePath + "/" + vc.Path + "/" + vc.Name
+	t.Cleanup(func() {
+		os.Remove(fullImgPath)
+	})
+
+	err = mgr.AttachLun(lc)
+	assert.NoError(t, err)
+
+	tid := queryTargetId(lc.TargetIQN)
+	t.Cleanup(func() {
+		cmd := exec.Command("/bin/sh", "-c",
+			fmt.Sprintf("tgt-admin --delete tid=%s", tid),
+		)
+		cmd.Run()
+	})
+
+	err = mgr.Reload()
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		os.Remove(mgr.targetConf)
+	})
+
 }

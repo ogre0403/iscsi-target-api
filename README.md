@@ -21,7 +21,7 @@ $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/is
 
 ## Limitation
 
-* One LUN per Target
+* One LUN per Target, vloume is add at LUN `1`.
 
 ## TODO
 

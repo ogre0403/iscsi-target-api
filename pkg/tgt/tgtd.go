@@ -12,15 +12,18 @@ import (
 )
 
 const (
-	TGTADM      = "tgtadm"
+	TGTADMIN    = "tgt-admin"
 	TGTIMG      = "tgtimg"
 	TGTSETUPLUN = "tgt-setup-lun"
+	TARGETCONF  = "/etc/tgt/conf.d/iscsi-target-api.conf"
+	BASEIMGPATH = "/var/lib/iscsi/"
 )
 
 type tgtd struct {
+	targetConf     string
 	BaseImagePath  string
 	tgtimgCmd      string
-	tgtadmCmd      string
+	tgtadminCmd    string
 	tgtsetuplunCmd string
 }
 
@@ -28,6 +31,7 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 
 	t := &tgtd{
 		BaseImagePath: mgrCfg.BaseImagePath,
+		targetConf:    TARGETCONF,
 	}
 
 	exist, e := isCmdExist(t)
@@ -35,7 +39,7 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 		return nil, e
 	}
 
-	log.Info(fmt.Sprintf("found %s in %s", TGTADM, t.tgtadmCmd))
+	log.Info(fmt.Sprintf("found %s in %s", TGTADMIN, t.tgtadminCmd))
 	log.Info(fmt.Sprintf("found %s in %s", TGTIMG, t.tgtimgCmd))
 	log.Info(fmt.Sprintf("found %s in %s", TGTSETUPLUN, t.tgtsetuplunCmd))
 
@@ -46,13 +50,13 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 func isCmdExist(t *tgtd) (bool, error) {
 
 	var stdout bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGTADM)
+	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGTADMIN)
 	cmd.Stdout = &stdout
 
 	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGTADM))
+		return false, errors.New(fmt.Sprintf("%s not found", TGTADMIN))
 	}
-	t.tgtadmCmd = strings.TrimSpace(string(stdout.Bytes()))
+	t.tgtadminCmd = strings.TrimSpace(string(stdout.Bytes()))
 
 	var stdout1 bytes.Buffer
 	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTIMG)
@@ -98,37 +102,6 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 	return nil
 }
 
-// Deprecated:
-func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
-
-	if !validateIQN(cfg.TargetIQN) {
-		return errors.New(fmt.Sprintf("%s is not valid IQN format", cfg.TargetIQN))
-	}
-
-	tid := cfg.TargetId
-	if cfg.TargetId == "" {
-		tid = queryMaxTargetId()
-		if tid == "-1" {
-			return errors.New("Can not find maximun target id")
-		}
-	}
-
-	var stdout, stderr bytes.Buffer
-
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %s -T %s ", t.tgtadmCmd, tid, cfg.TargetIQN),
-	)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-
-	log.Info(fmt.Sprintf("Created Target %s with tid %s", cfg.TargetIQN, tid))
-	return nil
-}
-
 func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 
 	// todo: check target exist
@@ -158,5 +131,49 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 }
 
 func (t *tgtd) Reload() error {
+	var stdout, stderr bytes.Buffer
+
+	cmd := exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --dump > %s ", t.tgtadminCmd, t.targetConf),
+	)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+	return nil
+}
+
+// Deprecated:
+func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
+
+	return errors.New("not supported")
+
+	if !validateIQN(cfg.TargetIQN) {
+		return errors.New(fmt.Sprintf("%s is not valid IQN format", cfg.TargetIQN))
+	}
+
+	tid := cfg.TargetId
+	if cfg.TargetId == "" {
+		tid = queryMaxTargetId()
+		if tid == "-1" {
+			return errors.New("Can not find maximun target id")
+		}
+	}
+
+	var stdout, stderr bytes.Buffer
+
+	cmd := exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %s -T %s ", t.tgtadminCmd, tid, cfg.TargetIQN),
+	)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+
+	log.Info(fmt.Sprintf("Created Target %s with tid %s", cfg.TargetIQN, tid))
 	return nil
 }

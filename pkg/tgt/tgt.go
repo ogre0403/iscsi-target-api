@@ -13,7 +13,6 @@ const (
 
 type TargetManager interface {
 	CreateVolume(cfg *cfg.VolumeCfg) error
-	CreateTarget(cfg *cfg.TargetCfg) error
 	AttachLun(cfg *cfg.LunCfg) error
 	Reload() error
 }
