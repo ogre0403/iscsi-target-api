@@ -39,7 +39,8 @@ iqn.2017-07.k8s.<namespace>:<PVC-UUID>
 
 ## TODO
 
-* Support ACL
+* Support iSCSI ACL
+* add API Authorization
 * One target has multiple LUNs
     * One target represent on namespace, one LUN represent one PV . 
 * Support `iscsitarget`

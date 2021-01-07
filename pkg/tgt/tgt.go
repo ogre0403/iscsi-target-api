@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	tgtdType = "tgtd"
+	TgtdType = "tgtd"
 	// todo: support iscsitarget
 	iScsiTargetType = "iscsitarget"
 )
@@ -21,16 +21,16 @@ type TargetManager interface {
 	DeleteTargetAPI(*gin.Context)
 	DeleteVolume(*cfg.VolumeCfg) error
 	DeleteVolumeAPI(*gin.Context)
-	Reload() error
+	Save() error
 }
 
 func NewTarget(targetType string, mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 	switch targetType {
-	case tgtdType:
-		log.Infof("Initialize %s target manager tool", tgtdType)
+	case TgtdType:
+		log.Infof("Initialize %s target manager tool", TgtdType)
 		return newTgtdTarget(mgrCfg)
 	default:
-		log.Infof("%s is not supported tool, use %s as default manager tool", targetType, tgtdType)
+		log.Infof("%s is not supported tool, use %s as default manager tool", targetType, TgtdType)
 		return newTgtdTarget(mgrCfg)
 	}
 }

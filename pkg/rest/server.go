@@ -2,8 +2,6 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
-	log "github.com/golang/glog"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 	"strconv"
 )
@@ -13,17 +11,7 @@ type APIServer struct {
 	targetMgr *tgt.TargetManager
 }
 
-func NewAPIServer() *APIServer {
-
-	m, err := tgt.NewTarget("tgtd", &cfg.ManagerCfg{
-		BaseImagePath: tgt.BASEIMGPATH,
-		TargetConf:    tgt.TARGETCONF,
-	})
-
-	if err != nil {
-		log.Fatalf("initialize target manager fail: %s", err.Error())
-		return nil
-	}
+func NewAPIServer(m tgt.TargetManager) *APIServer {
 
 	s := &APIServer{
 		router:    gin.Default(),

@@ -164,7 +164,7 @@ func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
 	return nil
 }
 
-func (t *tgtd) Reload() error {
+func (t *tgtd) Save() error {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
@@ -210,8 +210,8 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 		return
 	}
 
-	if err := t.Reload(); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
+	if err := t.Save(); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
 		return
 	}
 
@@ -249,8 +249,8 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 		return
 	}
 
-	if err := t.Reload(); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
+	if err := t.Save(); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
 		return
 	}
 
