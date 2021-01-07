@@ -1,7 +1,6 @@
 package tgt
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
 	"regexp"
 	"testing"
@@ -23,7 +22,7 @@ func Test_FindMax(t *testing.T) {
 	assert.Equal(t, "7", r)
 }
 
-func Test_FindTd(t *testing.T){
+func Test_FindTd(t *testing.T) {
 	s1 := "Target 3: iqn.2017-07.com.hiroom2:aaadd"
 	tid1 := findTid(s1)
 	assert.Equal(t, "3", tid1)
@@ -34,7 +33,8 @@ func Test_FindTd(t *testing.T){
 
 }
 
-func Test_AAA(t *testing.T){
+func Test_SizeRegex(t *testing.T) {
 	r, _ := regexp.Compile("[0-9]+m$")
-	fmt.Println(r.MatchString("1110mm"))
+	assert.Equal(t, false, r.MatchString("1024mm"))
+	assert.Equal(t, true, r.MatchString("1024m"))
 }

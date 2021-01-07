@@ -138,10 +138,29 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 }
 
 func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
+
+	tid := queryTargetId(cfg.TargetIQN)
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --delete tid=%s", t.tgtadminCmd, tid),
+	)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+
+	log.Info(string(stdout.Bytes()))
 	return nil
 }
 
 func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
+
+	fullImgPath := t.BaseImagePath + "/" + cfg.Path + "/" + cfg.Name
+	if err := os.Remove(fullImgPath); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -165,12 +184,12 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		RespondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
 		return
 	}
 
 	if err := t.CreateVolume(&req); err != nil {
-		RespondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
+		respondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
 		return
 	}
 
@@ -184,17 +203,17 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		RespondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
 		return
 	}
 
 	if err := t.AttachLun(&req); err != nil {
-		RespondWithError(c, http.StatusInternalServerError, "Attach LUN fail: %s", err.Error())
+		respondWithError(c, http.StatusInternalServerError, "Attach LUN fail: %s", err.Error())
 		return
 	}
 
 	if err := t.Reload(); err != nil {
-		RespondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
+		respondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
 		return
 	}
 
@@ -203,49 +222,18 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 	})
 }
 
-func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {}
+func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
+
+}
 
 func (t *tgtd) DeleteTargetAPI(c *gin.Context) {}
 
-func RespondWithError(c *gin.Context, code int, format string, args ...interface{}) {
-	log.Errorf(format, args)
+func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
+	log.Errorf(format, args...)
 	resp := cfg.Response{
 		Error:   true,
 		Message: fmt.Sprintf(format, args...),
 	}
 	c.JSON(code, resp)
 	c.Abort()
-}
-
-// Deprecated:
-func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
-
-	return errors.New("not supported")
-
-	if !validateIQN(cfg.TargetIQN) {
-		return errors.New(fmt.Sprintf("%s is not valid IQN format", cfg.TargetIQN))
-	}
-
-	tid := cfg.TargetId
-	if cfg.TargetId == "" {
-		tid = queryMaxTargetId()
-		if tid == "-1" {
-			return errors.New("Can not find maximun target id")
-		}
-	}
-
-	var stdout, stderr bytes.Buffer
-
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %s -T %s ", t.tgtadminCmd, tid, cfg.TargetIQN),
-	)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-
-	log.Info(fmt.Sprintf("Created Target %s with tid %s", cfg.TargetIQN, tid))
-	return nil
 }
