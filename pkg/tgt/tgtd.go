@@ -1,7 +1,6 @@
 package tgt
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -9,60 +8,69 @@ import (
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"os"
 	"os/exec"
-	"regexp"
-	"sort"
-	"strconv"
 	"strings"
 )
 
 const (
-	TGTADM = "tgtadm"
-	TGTIMG = "tgtimg"
+	TGTADM      = "tgtadm"
+	TGTIMG      = "tgtimg"
+	TGTSETUPLUN = "tgt-setup-lun"
 )
 
 type tgtd struct {
-	BaseImagePath string
-	tgtimgCmd     string
-	tgtadmCmd     string
+	BaseImagePath  string
+	tgtimgCmd      string
+	tgtadmCmd      string
+	tgtsetuplunCmd string
 }
 
 func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 
-	exist, tgtadm, tgtimg, e := isCmdExist()
+	t := &tgtd{
+		BaseImagePath: mgrCfg.BaseImagePath,
+	}
+
+	exist, e := isCmdExist(t)
 	if exist == false {
 		return nil, e
 	}
 
-	log.Info(fmt.Sprintf("found %s in %s", TGTADM, tgtadm))
-	log.Info(fmt.Sprintf("found %s in %s", TGTIMG, tgtimg))
+	log.Info(fmt.Sprintf("found %s in %s", TGTADM, t.tgtadmCmd))
+	log.Info(fmt.Sprintf("found %s in %s", TGTIMG, t.tgtimgCmd))
+	log.Info(fmt.Sprintf("found %s in %s", TGTSETUPLUN, t.tgtsetuplunCmd))
 
-	return &tgtd{
-		BaseImagePath: mgrCfg.BaseImagePath,
-		tgtadmCmd:     tgtadm,
-		tgtimgCmd:     tgtimg,
-	}, nil
+	return t, nil
+
 }
 
-func isCmdExist() (bool, string, string, error) {
+func isCmdExist(t *tgtd) (bool, error) {
 
 	var stdout bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGTADM)
 	cmd.Stdout = &stdout
 
 	if err := cmd.Run(); err != nil {
-		return false, "", "", errors.New(fmt.Sprintf("%s not found", TGTADM))
+		return false, errors.New(fmt.Sprintf("%s not found", TGTADM))
 	}
-	tgtadmCmd := strings.TrimSpace(string(stdout.Bytes()))
+	t.tgtadmCmd = strings.TrimSpace(string(stdout.Bytes()))
 
 	var stdout1 bytes.Buffer
 	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTIMG)
 	cmd.Stdout = &stdout1
 	if err := cmd.Run(); err != nil {
-		return false, "", "", errors.New(fmt.Sprintf("%s not found", TGTIMG))
+		return false, errors.New(fmt.Sprintf("%s not found", TGTIMG))
 	}
-	tgtimgCmd := strings.TrimSpace(string(stdout1.Bytes()))
+	t.tgtimgCmd = strings.TrimSpace(string(stdout1.Bytes()))
 
-	return true, tgtadmCmd, tgtimgCmd, nil
+	var stdout2 bytes.Buffer
+	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTSETUPLUN)
+	cmd.Stdout = &stdout2
+	if err := cmd.Run(); err != nil {
+		return false, errors.New(fmt.Sprintf("%s not found", TGTSETUPLUN))
+	}
+	t.tgtsetuplunCmd = strings.TrimSpace(string(stdout2.Bytes()))
+
+	return true, nil
 }
 
 // todo: support LVM based volume
@@ -90,6 +98,7 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 	return nil
 }
 
+// Deprecated:
 func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
 
 	if !validateIQN(cfg.TargetIQN) {
@@ -98,7 +107,7 @@ func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
 
 	tid := cfg.TargetId
 	if cfg.TargetId == "" {
-		tid = maxTargetId()
+		tid = queryMaxTargetId()
 		if tid == "-1" {
 			return errors.New("Can not find maximun target id")
 		}
@@ -119,49 +128,35 @@ func (t *tgtd) CreateTarget(cfg *cfg.TargetCfg) error {
 	log.Info(fmt.Sprintf("Created Target %s with tid %s", cfg.TargetIQN, tid))
 	return nil
 }
-func (t *tgtd) CreateLun(cfg *cfg.LunCfg) error {
-	return nil
-}
-func (t *tgtd) AttachLun() error {
-	return nil
-}
-func (t *tgtd) Reload() error {
-	return nil
-}
 
-func validateIQN(iqn string) bool {
-	r, _ := regexp.Compile("iqn\\.(\\d{4}-\\d{2})\\.([^:]+)(:)([^,:\\s']+)")
-	return r.MatchString(iqn)
-}
+func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 
-func maxTargetId() string {
+	// todo: check target exist
+	if queryTargetId(cfg.TargetIQN) != "-1" {
+		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
+	}
+
+	volPath := t.BaseImagePath + "/" + cfg.Volume.Path + "/" + cfg.Volume.Name
+
 	var stdout, stderr bytes.Buffer
-
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("tgtadm --lld iscsi --op show --mode target | grep -E \"iqn\\.[0-9]{4}-[0-9]{2}\" | grep Target "),
+		fmt.Sprintf("%s  -n %s -d %s ", t.tgtsetuplunCmd, cfg.TargetIQN, volPath),
 	)
+
+	log.Info(cmd.String())
+
 	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		log.Info(fmt.Sprintf(string(stderr.Bytes())))
-		return "-1"
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
 
-	return _findMax(string(stdout.Bytes()))
+	log.Info(string(stdout.Bytes()))
+
+	return nil
 }
 
-func _findMax(s string) string {
-
-	scanner := bufio.NewScanner(bufio.NewReader(strings.NewReader(s)))
-
-	aa := []int{}
-	for scanner.Scan() {
-		line := scanner.Text()
-		a, _ := strconv.Atoi(strings.Split(strings.Split(line, ":")[0], " ")[1])
-		aa = append(aa, a)
-	}
-
-	sort.Ints(aa)
-
-	return strconv.Itoa(aa[len(aa)-1])
+func (t *tgtd) Reload() error {
+	return nil
 }

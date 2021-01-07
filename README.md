@@ -17,3 +17,15 @@ $ tgt-setup-lun -n iqn.2017-07.com.hiroom2:debian-9  -d /var/lib/iscsi/test.img
 $ tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
 $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/iscsi/10m-$i.img
 ```
+
+
+## Limitation
+
+* One LUN per Target
+
+## TODO
+
+* One target has multiple LUNs
+    * One target represent on namespace, one LUN represent one PV . 
+
+* Support `iscsitarget`

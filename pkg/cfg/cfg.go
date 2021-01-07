@@ -14,6 +14,8 @@ type VolumeCfg struct {
 }
 
 type LunCfg struct {
+	TargetIQN string
+	Volume    *VolumeCfg
 }
 
 type TargetCfg struct {
