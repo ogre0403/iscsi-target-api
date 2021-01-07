@@ -193,9 +193,7 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, cfg.Response{
-		Error: false,
-	})
+	responseWithOk(c)
 }
 
 func (t *tgtd) AttachLunAPI(c *gin.Context) {
@@ -217,16 +215,47 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, cfg.Response{
-		Error: false,
-	})
+	responseWithOk(c)
 }
 
 func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
+	var req cfg.VolumeCfg
+	err := c.BindJSON(&req)
 
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := t.DeleteVolume(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Delete Volume fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
 }
 
-func (t *tgtd) DeleteTargetAPI(c *gin.Context) {}
+func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
+	var req cfg.TargetCfg
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind TargetCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := t.DeleteTarget(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Delete Target fail: %s", err.Error())
+		return
+	}
+
+	if err := t.Reload(); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
+}
 
 func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
 	log.Errorf(format, args...)
@@ -236,4 +265,11 @@ func respondWithError(c *gin.Context, code int, format string, args ...interface
 	}
 	c.JSON(code, resp)
 	c.Abort()
+}
+
+func responseWithOk(c *gin.Context) {
+	c.JSON(http.StatusOK, cfg.Response{
+		Error:   false,
+		Message: "Successful",
+	})
 }
