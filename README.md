@@ -18,6 +18,11 @@ $ tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:d
 $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/iscsi/10m-$i.img
 ```
 
+## PV / PVC mapping
+
+```bash
+iqn.2017-07.k8s.<namespace>:<PVC-UUID>
+```
 
 ## Limitation
 
@@ -29,3 +34,11 @@ $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/is
     * One target represent on namespace, one LUN represent one PV . 
 
 * Support `iscsitarget`
+
+
+## Curl Example
+
+```bash
+$ curl -XPOST -d '{"name":"aaa.img","size":"111m"}' http://140.110.30.57/createVol
+$ curl -XPOST -d '{"targetIQN":"iqn.2017-07.com.hiroom2:aaadd", "volume": {"name":"aaa.img"}}' http://140.110.30.57/attachLun
+```

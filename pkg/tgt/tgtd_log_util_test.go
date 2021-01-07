@@ -1,7 +1,9 @@
 package tgt
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
+	"regexp"
 	"testing"
 )
 
@@ -30,4 +32,9 @@ func Test_FindTd(t *testing.T){
 	tid2 := findTid(s2)
 	assert.Equal(t, "-1", tid2)
 
+}
+
+func Test_AAA(t *testing.T){
+	r, _ := regexp.Compile("[0-9]+m$")
+	fmt.Println(r.MatchString("1110mm"))
 }

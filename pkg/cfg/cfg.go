@@ -2,24 +2,30 @@ package cfg
 
 type ManagerCfg struct {
 	BaseImagePath string
+	TargetConf    string
 }
 
 type VolumeCfg struct {
-	Path string
-	Size string
-	Name string
+	Path string `json:"path"`
+	Size string `json:"size"`
+	Name string `json:"name"`
+
 	// todo: support in the future
-	Type         string
-	ThinProvsion bool
+	Type          string `json:"type"`
+	ThinProvision bool   `json:"thinProvision"`
 }
 
 type LunCfg struct {
-	TargetIQN string
-	Volume    *VolumeCfg
+	TargetIQN string     `json:"targetIQN"`
+	Volume    *VolumeCfg `json:"volume"`
 }
 
-// Deprecated:
 type TargetCfg struct {
-	TargetId  string
-	TargetIQN string
+	TargetId  string `json:"-"`
+	TargetIQN string `json:"targetIQN"`
+}
+
+type Response struct {
+	Error   bool    `json:"error"`
+	Message string `json:"message"`
 }

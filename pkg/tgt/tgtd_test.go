@@ -20,7 +20,7 @@ func init() {
 		tgtadminCmd:    TGTADMIN,
 		tgtimgCmd:      TGTIMG,
 		tgtsetuplunCmd: TGTSETUPLUN,
-		targetConf:     TARGETCONF,
+		targetConf:     "/tmp/iscsi-target-api.conf",
 	}
 }
 
@@ -28,7 +28,8 @@ func TestNewTarget(t *testing.T) {
 	flag.Parse()
 
 	_, err := newTgtdTarget(&cfg.ManagerCfg{
-		BaseImagePath: "/var/lib/iscsi/",
+		BaseImagePath: BASEIMGPATH,
+		TargetConf:    TARGETCONF,
 	})
 
 	assert.NoError(t, err)

@@ -1,6 +1,7 @@
 package tgt
 
 import (
+	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 )
@@ -12,8 +13,14 @@ const (
 )
 
 type TargetManager interface {
-	CreateVolume(cfg *cfg.VolumeCfg) error
-	AttachLun(cfg *cfg.LunCfg) error
+	CreateVolume(*cfg.VolumeCfg) error
+	CreateVolumeAPI(*gin.Context)
+	AttachLun(*cfg.LunCfg) error
+	AttachLunAPI(*gin.Context)
+	DeleteTarget(*cfg.TargetCfg) error
+	DeleteTargetAPI(*gin.Context)
+	DeleteVolume(*cfg.VolumeCfg) error
+	DeleteVolumeAPI(*gin.Context)
 	Reload() error
 }
 

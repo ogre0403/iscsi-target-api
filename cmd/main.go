@@ -3,27 +3,21 @@ package main
 import (
 	"flag"
 	log "github.com/golang/glog"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
-	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
+	"github.com/ogre0403/iscsi-target-api/pkg/rest"
 )
 
 func main() {
 
 	flag.Parse()
-	m, err := tgt.NewTarget("tgtd", &cfg.ManagerCfg{
-		BaseImagePath: "/var/lib/iscsi/",
-	})
-
-	if err != nil {
-		log.Fatal(err.Error())
+	s := rest.NewAPIServer()
+	if s == nil {
+		log.Error("Start server fail")
 	}
 
-	err = m.CreateVolume(&cfg.VolumeCfg{
-		Name: "test.img",
-		Size: "100m",
-	})
+	err := s.RunServer(80)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Error(err.Error())
 	}
+
 
 }

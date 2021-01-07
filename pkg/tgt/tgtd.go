@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -31,7 +34,7 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 
 	t := &tgtd{
 		BaseImagePath: mgrCfg.BaseImagePath,
-		targetConf:    TARGETCONF,
+		targetConf:    mgrCfg.TargetConf,
 	}
 
 	exist, e := isCmdExist(t)
@@ -80,6 +83,11 @@ func isCmdExist(t *tgtd) (bool, error) {
 // todo: support LVM based volume
 func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 
+	r, _ := regexp.Compile("[0-9]+m$")
+	if !r.MatchString(cfg.Size) {
+		return errors.New("size is media size (in megabytes), eg. 1024m")
+	}
+
 	fullImgPath := t.BaseImagePath + "/" + cfg.Path + "/" + cfg.Name
 
 	if _, err := os.Stat(fullImgPath); !os.IsNotExist(err) {
@@ -104,7 +112,6 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 
 func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 
-	// todo: check target exist
 	if queryTargetId(cfg.TargetIQN) != "-1" {
 		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
 	}
@@ -130,6 +137,14 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 	return nil
 }
 
+func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
+	return nil
+}
+
+func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
+	return nil
+}
+
 func (t *tgtd) Reload() error {
 	var stdout, stderr bytes.Buffer
 
@@ -143,6 +158,63 @@ func (t *tgtd) Reload() error {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
 	return nil
+}
+
+func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
+	var req cfg.VolumeCfg
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		RespondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := t.CreateVolume(&req); err != nil {
+		RespondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, cfg.Response{
+		Error: false,
+	})
+}
+
+func (t *tgtd) AttachLunAPI(c *gin.Context) {
+	var req cfg.LunCfg
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		RespondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := t.AttachLun(&req); err != nil {
+		RespondWithError(c, http.StatusInternalServerError, "Attach LUN fail: %s", err.Error())
+		return
+	}
+
+	if err := t.Reload(); err != nil {
+		RespondWithError(c, http.StatusInternalServerError, "Reload tgtd config file fail: %s", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, cfg.Response{
+		Error: false,
+	})
+}
+
+func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {}
+
+func (t *tgtd) DeleteTargetAPI(c *gin.Context) {}
+
+func RespondWithError(c *gin.Context, code int, format string, args ...interface{}) {
+	log.Errorf(format, args)
+	resp := cfg.Response{
+		Error:   true,
+		Message: fmt.Sprintf(format, args...),
+	}
+	c.JSON(code, resp)
+	c.Abort()
 }
 
 // Deprecated:
