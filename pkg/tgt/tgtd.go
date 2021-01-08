@@ -140,6 +140,9 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
 
 	tid := queryTargetId(cfg.TargetIQN)
+	if tid == "-1" {
+		return errors.New(fmt.Sprintf("target %s not found", cfg.TargetIQN))
+	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c",
 		fmt.Sprintf("%s --delete tid=%s", t.tgtadminCmd, tid),

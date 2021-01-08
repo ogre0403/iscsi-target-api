@@ -16,28 +16,34 @@ endif
 
 
 run:
-	rm -rf bin/${PROJ_NAME}
-	go mod vendor
-	go build -mod=vendor  -ldflags '-X "main.buildTime='"${buildTime}"'" -X "main.commitID='"${COMMIT}"'"'  -o bin/${PROJ_NAME} cmd/main.go
-	./bin/${PROJ_NAME} \
-	--logtostderr=true --v=2
+	./bin/${PROJ_NAME} --logtostderr=true --v=2
 
 test:
 	go test  ./...  -v  -cover -count=1 --logtostderr=true
 
 
+build:
+	rm -rf bin/${PROJ_NAME}
+	go mod vendor
+	go build -mod=vendor  \
+	-ldflags '-X "main.buildTime='"${buildTime}"'" -X "main.commitID='"${COMMIT}"'"' \
+	-o bin/${PROJ_NAME} cmd/main.go
+
 clean:
 	rm -rf bin/*
 
-
-
-
 run-in-docker:
-	docker run -ti --rm  ${DOCKER_REPO}/${PROJ_NAME}:$(TAG)
+	docker run -d \
+	--rm --privileged  \
+	-v /etc/tgt/:/etc/tgt/ \
+	-v /var/run:/var/run \
+	-v /var/lib/iscsi/:/var/lib/iscsi/ \
+	-p 8811:8811 \
+	${DOCKER_REPO}/${PROJ_NAME}:$(TAG)
 
 
 build-img:
-	docker build -t ${DOCKER_REPO}/${PROJ_NAME}:$(RELEASE_TAG) .
+	docker build -t ${DOCKER_REPO}/${PROJ_NAME}:$(TAG) .
 
 
 build-in-docker:

@@ -6,6 +6,7 @@ import (
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 var s *rest.APIServer
@@ -17,7 +18,7 @@ func init() {
 	s = rest.NewAPIServer(m)
 	c = NewClient("127.0.0.1", 80)
 	go s.RunServer(80)
-
+	time.Sleep(3 * time.Second)
 }
 
 func Test_ClientCreateVolume(t *testing.T) {
