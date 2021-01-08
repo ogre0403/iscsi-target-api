@@ -6,6 +6,13 @@ import (
 	"strconv"
 )
 
+const (
+	CreateVolumeEndpoint = "/createVol"
+	AttachLunEndpoint    = "/attachLun"
+	DeleteTargetEndpoint = "/deleteTar"
+	DeleteVolumeEndpoint = "/deleteVol"
+)
+
 type APIServer struct {
 	router    *gin.Engine
 	targetMgr *tgt.TargetManager
@@ -31,8 +38,8 @@ func (s *APIServer) RunServer(port int) error {
 }
 
 func addRoute(r *gin.Engine, m tgt.TargetManager) {
-	r.POST("/createVol", m.CreateVolumeAPI)
-	r.POST("/attachLun", m.AttachLunAPI)
-	r.DELETE("/deleteTar", m.DeleteTargetAPI)
-	r.DELETE("/deleteVol", m.DeleteVolumeAPI)
+	r.POST(CreateVolumeEndpoint, m.CreateVolumeAPI)
+	r.POST(AttachLunEndpoint, m.AttachLunAPI)
+	r.DELETE(DeleteTargetEndpoint, m.DeleteTargetAPI)
+	r.DELETE(DeleteVolumeEndpoint, m.DeleteVolumeAPI)
 }

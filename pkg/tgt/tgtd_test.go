@@ -117,7 +117,7 @@ func TestTgtd_Reload(t *testing.T) {
 		cmd.Run()
 	})
 
-	err = mgr.Reload()
+	err = mgr.Save()
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
