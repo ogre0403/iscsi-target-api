@@ -7,9 +7,10 @@ import (
 )
 
 const (
-	TgtdType = "tgtd"
+	TgtdType   = "tgtd"
+	MockupType = "mockup"
 	// todo: support iscsitarget
-	iScsiTargetType = "iscsitarget"
+	IscsiTargetType = "iscsitarget"
 )
 
 type TargetManager interface {
@@ -29,6 +30,9 @@ func NewTarget(targetType string, mgrCfg *cfg.ManagerCfg) (TargetManager, error)
 	case TgtdType:
 		log.Infof("Initialize %s target manager tool", TgtdType)
 		return newTgtdTarget(mgrCfg)
+	case MockupType:
+		log.Infof("Initialize %s target manager tool", MockupType)
+		return newMockupTarget(mgrCfg)
 	default:
 		log.Infof("%s is not supported tool, use %s as default manager tool", targetType, TgtdType)
 		return newTgtdTarget(mgrCfg)

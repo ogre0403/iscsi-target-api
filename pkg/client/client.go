@@ -44,7 +44,7 @@ func (c *Client) DeleteTarget(target *cfg.TargetCfg) error {
 }
 
 func (c *Client) getEndpoint(endpoint string) string {
-	return fmt.Sprintf("http://%s:%s/%s", c.serverIP, strconv.Itoa(c.serverPort), endpoint)
+	return fmt.Sprintf("http://%s:%s%s", c.serverIP, strconv.Itoa(c.serverPort), endpoint)
 }
 
 func (c *Client) request(method, endpoint string, config interface{}) error {
