@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -94,6 +95,12 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 		return errors.New(fmt.Sprintf("Image %s alreay exist", fullImgPath))
 	}
 
+	if _, err := os.Stat(t.BaseImagePath + "/" + cfg.Path); os.IsNotExist(err) {
+		if err := os.MkdirAll(t.BaseImagePath+"/"+cfg.Path, 0755); err != nil {
+			return errors.New("unable to create directory to provision new volume: " + err.Error())
+		}
+	}
+
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
@@ -160,10 +167,19 @@ func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
 
 func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
 
-	fullImgPath := t.BaseImagePath + "/" + cfg.Path + "/" + cfg.Name
+	volSubDir := t.BaseImagePath + "/" + cfg.Path
+	fullImgPath := volSubDir + "/" + cfg.Name
 	if err := os.Remove(fullImgPath); err != nil {
 		return err
 	}
+
+	// remove dir when there is no volume
+	if isEmpty, _ := isDirEmpty(volSubDir); isEmpty {
+		if err := os.Remove(volSubDir); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -275,4 +291,18 @@ func responseWithOk(c *gin.Context) {
 		Error:   false,
 		Message: "Successful",
 	})
+}
+
+func isDirEmpty(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1) // Or f.Readdir(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err // Either not empty or error, suits both cases
 }

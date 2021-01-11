@@ -7,7 +7,6 @@ import (
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/stretchr/testify/assert"
 	"os"
-	"os/exec"
 	"testing"
 )
 
@@ -39,6 +38,7 @@ func TestTgtd_CreateVolume(t *testing.T) {
 
 	vc := &cfg.VolumeCfg{
 		Name: "test.img",
+		Path: "p",
 		Size: "100m",
 	}
 	err := mgr.CreateVolume(vc)
@@ -54,6 +54,7 @@ func TestTgtd_CreateVolume(t *testing.T) {
 func TestTgtd_AttachLun(t *testing.T) {
 	vc := &cfg.VolumeCfg{
 		Name: "test.img",
+		Path: "p",
 		Size: "100m",
 	}
 
@@ -90,6 +91,7 @@ func TestTgtd_AttachLun(t *testing.T) {
 func TestTgtd_Reload(t *testing.T) {
 	vc := &cfg.VolumeCfg{
 		Name: "test.img",
+		Path: "p",
 		Size: "100m",
 	}
 
@@ -101,20 +103,20 @@ func TestTgtd_Reload(t *testing.T) {
 	err := mgr.CreateVolume(vc)
 	assert.NoError(t, err)
 
-	fullImgPath := mgr.BaseImagePath + "/" + vc.Path + "/" + vc.Name
+	//fullImgPath := mgr.BaseImagePath + "/" + vc.Path + "/" + vc.Name
 	t.Cleanup(func() {
-		os.Remove(fullImgPath)
+		mgr.DeleteVolume(vc)
 	})
 
 	err = mgr.AttachLun(lc)
 	assert.NoError(t, err)
 
-	tid := queryTargetId(lc.TargetIQN)
 	t.Cleanup(func() {
-		cmd := exec.Command("/bin/sh", "-c",
-			fmt.Sprintf("tgt-admin --delete tid=%s", tid),
-		)
-		cmd.Run()
+		cfg := &cfg.TargetCfg{
+			TargetIQN: lc.TargetIQN,
+		}
+		err := mgr.DeleteTarget(cfg)
+		assert.NoError(t, err)
 	})
 
 	err = mgr.Save()
