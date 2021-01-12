@@ -39,7 +39,8 @@ run-in-docker:
 	-v /var/run:/var/run \
 	-v /var/lib/iscsi/:/var/lib/iscsi/ \
 	-p 8811:8811 \
-	${DOCKER_REPO}/${PROJ_NAME}:$(TAG)
+	${DOCKER_REPO}/${PROJ_NAME}:$(TAG) \
+	/iscsi-target-api -v=2 --logtostderr=true --manager-type=tgtd --volume-image-path=/var/lib/iscsi
 
 
 build-img:

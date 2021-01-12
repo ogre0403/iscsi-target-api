@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync/atomic"
 )
 
 const (
@@ -24,6 +25,7 @@ const (
 )
 
 type tgtd struct {
+	locker         uint32
 	targetConf     string
 	BaseImagePath  string
 	tgtimgCmd      string
@@ -199,6 +201,13 @@ func (t *tgtd) Save() error {
 }
 
 func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&t.locker, 0)
+
 	var req cfg.VolumeCfg
 	err := c.BindJSON(&req)
 
@@ -216,6 +225,13 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 }
 
 func (t *tgtd) AttachLunAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&t.locker, 0)
+
 	var req cfg.LunCfg
 	err := c.BindJSON(&req)
 
@@ -238,6 +254,13 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 }
 
 func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
+		respondWithError(c,http.StatusTooManyRequests,"Another API is executing" )
+		return
+	}
+	defer atomic.StoreUint32(&t.locker, 0)
+
 	var req cfg.VolumeCfg
 	err := c.BindJSON(&req)
 
@@ -255,6 +278,13 @@ func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 }
 
 func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
+		respondWithError(c,http.StatusTooManyRequests,"Another API is executing" )
+		return
+	}
+	defer atomic.StoreUint32(&t.locker, 0)
+
 	var req cfg.TargetCfg
 	err := c.BindJSON(&req)
 
