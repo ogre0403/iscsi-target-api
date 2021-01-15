@@ -73,6 +73,11 @@ func (c *Client) request(method, endpoint string, config interface{}) error {
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return errors.New("request is not authorized")
+	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
 
 	r := cfg.Response{}
