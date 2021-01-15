@@ -14,16 +14,16 @@ import (
 )
 
 type Client struct {
-	client     *http.Client
-	serverIP   string
-	serverPort int
+	client       *http.Client
+	serverIP     string
+	serverConfig *cfg.ServerCfg
 }
 
-func NewClient(server string, port int) *Client {
+func NewClient(server string, serverconf *cfg.ServerCfg) *Client {
 	return &Client{
-		client:     &http.Client{},
-		serverIP:   server,
-		serverPort: port,
+		client:       &http.Client{},
+		serverIP:     server,
+		serverConfig: serverconf,
 	}
 }
 
@@ -44,7 +44,7 @@ func (c *Client) DeleteTarget(target *cfg.TargetCfg) error {
 }
 
 func (c *Client) getEndpoint(endpoint string) string {
-	return fmt.Sprintf("http://%s:%s%s", c.serverIP, strconv.Itoa(c.serverPort), endpoint)
+	return fmt.Sprintf("http://%s:%s%s", c.serverIP, strconv.Itoa(c.serverConfig.Port), endpoint)
 }
 
 func (c *Client) request(method, endpoint string, config interface{}) error {
@@ -62,6 +62,8 @@ func (c *Client) request(method, endpoint string, config interface{}) error {
 		log.Error(err)
 		return err
 	}
+
+	req.SetBasicAuth(c.serverConfig.Username, c.serverConfig.Password)
 
 	resp, err := c.client.Do(req)
 

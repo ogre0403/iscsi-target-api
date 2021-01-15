@@ -15,10 +15,16 @@ var c *Client
 func init() {
 
 	m, _ := tgt.NewTarget(tgt.MockupType, &cfg.ManagerCfg{})
-	s = rest.NewAPIServer(m)
-	c = NewClient("127.0.0.1", 80)
-	go s.RunServer(80)
-	time.Sleep(3 * time.Second)
+	sc := &cfg.ServerCfg{
+		Port:     80,
+		Username: "admin",
+		Password: "password",
+	}
+
+	s = rest.NewAPIServer(m, sc)
+	c = NewClient("127.0.0.1", sc)
+	go s.RunServer()
+	time.Sleep(3* time.Second)
 }
 
 func Test_ClientCreateVolume(t *testing.T) {

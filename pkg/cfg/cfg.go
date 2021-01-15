@@ -26,6 +26,12 @@ type TargetCfg struct {
 }
 
 type Response struct {
-	Error   bool    `json:"error"`
+	Error   bool   `json:"error"`
 	Message string `json:"message"`
+}
+
+type ServerCfg struct {
+	Port     int
+	Username string
+	Password string
 }

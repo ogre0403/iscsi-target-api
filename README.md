@@ -76,7 +76,7 @@ $ curl -XDELETE -d '{"name":"test.img","path":"test"}' http://127.0.0.1:8811/del
 ## TODO
 
 * Support iSCSI ACL
-* add API Authorization
+* ~~add API Authorization~~
 * One target has multiple LUNs
     * One target represent on namespace, one LUN represent one PV . 
 * Support `iscsitarget` manage tool
