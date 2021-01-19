@@ -5,17 +5,6 @@ type ManagerCfg struct {
 	TargetConf    string
 }
 
-type VolumeCfg struct {
-	Group string `json:"group"`
-	Size  uint64 `json:"size"`
-	Unit  string `json:"unit"`
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-
-	// todo: support in the future
-	ThinProvision bool `json:"thinProvision"`
-}
-
 type LunCfg struct {
 	TargetIQN string     `json:"targetIQN"`
 	Volume    *VolumeCfg `json:"volume"`

@@ -6,11 +6,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
-	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
-	"io"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 	"sync/atomic"
@@ -85,87 +82,20 @@ func isCmdExist(t *tgtd) (bool, error) {
 }
 
 func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
-
-	switch cfg.Type {
-	case TGTIMG:
-		log.V(2).Infof("Provision volume by %s ", TGTIMG)
-		return tgtimgPovision(t, cfg)
-	case LVM:
-		log.V(2).Infof("Provision volume by %s ", LVM)
-		return lvmProvision(cfg)
-	default:
-		log.Errorf("%s is not supported volume provision tool", cfg.Type)
-		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Type))
-	}
-}
-
-// todo: refact to volume
-func lvmProvision(cfg *cfg.VolumeCfg) error {
-
-	vgo, err := lvm.VgOpen(cfg.Group, "w")
-
-	if err != nil {
-		return err
-	}
-
-	defer vgo.Close()
-
-	_, err = vgo.CreateLvLinear(cfg.Name, uint64(lvm.UnitTranslate(cfg.Size, cfg.Unit, lvm.B)))
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// todo: support LVM resize
-func lvmResize(cfg *cfg.VolumeCfg) error {
-	return errors.New("not implemented error")
-}
-
-func tgtimgPovision(t *tgtd, cfg *cfg.VolumeCfg) error {
-
-	sizeUnit := fmt.Sprintf("%dm", uint64(lvm.UnitTranslate(cfg.Size, cfg.Unit, lvm.MiB)))
-
-	fullImgPath := t.BaseImagePath + "/" + cfg.Group + "/" + cfg.Name
-
-	if _, err := os.Stat(fullImgPath); !os.IsNotExist(err) {
-		return errors.New(fmt.Sprintf("Image %s alreay exist", fullImgPath))
-	}
-
-	if _, err := os.Stat(t.BaseImagePath + "/" + cfg.Group); os.IsNotExist(err) {
-		if err := os.MkdirAll(t.BaseImagePath+"/"+cfg.Group, 0755); err != nil {
-			return errors.New("unable to create directory to provision new volume: " + err.Error())
-		}
-	}
-
-	var stdout, stderr bytes.Buffer
-
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s --file %s ", t.tgtimgCmd, sizeUnit, fullImgPath),
-	)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-	log.Info(string(stdout.Bytes()))
-	return nil
+	t.setupVol(cfg)
+	return cfg.Create()
 }
 
 func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 
-	var volPath string
+	t.setupVol(cfg.Volume)
+	volPath, err := cfg.Volume.Path()
+	if err != nil {
+		return err
+	}
 
-	switch cfg.Volume.Type {
-	case TGTIMG:
-		volPath = t.BaseImagePath + "/" + cfg.Volume.Group + "/" + cfg.Volume.Name
-	case LVM:
-		volPath = "/dev/" + cfg.Volume.Group + "/" + cfg.Volume.Name
-	default:
-		log.Errorf("%s is not supported volume provision tool", cfg.Volume.Type)
-		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Volume.Type))
+	if _, err := cfg.Volume.IsExist(); err != nil {
+		return err
 	}
 
 	if queryTargetId(cfg.TargetIQN) != "-1" {
@@ -213,58 +143,8 @@ func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
 }
 
 func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
-
-	switch cfg.Type {
-	case TGTIMG:
-		log.V(2).Infof("Delete volume by %s ", TGTIMG)
-		return tgtimgDelete(t, cfg)
-	case LVM:
-		log.V(2).Infof("Delete volume by %s ", LVM)
-		return lvmDelete(cfg)
-	default:
-		log.Errorf("%s is not supported volume provision tool", cfg.Type)
-		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Type))
-	}
-}
-
-// todo: refact to volume
-func tgtimgDelete(t *tgtd, cfg *cfg.VolumeCfg) error {
-
-	volSubDir := t.BaseImagePath + "/" + cfg.Group
-	fullImgPath := volSubDir + "/" + cfg.Name
-	if err := os.Remove(fullImgPath); err != nil {
-		return err
-	}
-
-	// remove dir when there is no volume
-	if isEmpty, _ := isDirEmpty(volSubDir); isEmpty {
-		if err := os.Remove(volSubDir); err != nil {
-			return err
-		}
-	}
-	return nil
-
-}
-
-func lvmDelete(cfg *cfg.VolumeCfg) error {
-
-	vgo, err := lvm.VgOpen(cfg.Group, "w")
-	if err != nil {
-		return err
-	}
-	defer vgo.Close()
-
-	lv, err := vgo.LvFromName(cfg.Name)
-	if err != nil {
-		return err
-	}
-
-	// Remove LV
-	err = lv.Remove()
-	if err != nil {
-		return err
-	}
-	return nil
+	t.setupVol(cfg)
+	return cfg.Delete()
 }
 
 func (t *tgtd) Save() error {
@@ -388,6 +268,11 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 	responseWithOk(c)
 }
 
+func (t *tgtd) setupVol(v *cfg.VolumeCfg) {
+	v.SetBaseImgPath(t.BaseImagePath)
+	v.SetTgtimgCmd(t.tgtimgCmd)
+}
+
 func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
 	log.Errorf(format, args...)
 	resp := cfg.Response{
@@ -403,18 +288,4 @@ func responseWithOk(c *gin.Context) {
 		Error:   false,
 		Message: "Successful",
 	})
-}
-
-func isDirEmpty(name string) (bool, error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return false, err
-	}
-	defer f.Close()
-
-	_, err = f.Readdirnames(1) // Or f.Readdir(1)
-	if err == io.EOF {
-		return true, nil
-	}
-	return false, err // Either not empty or error, suits both cases
 }
