@@ -38,6 +38,7 @@ run-in-docker:
 	-v /etc/tgt/:/etc/tgt/ \
 	-v /var/run:/var/run \
 	-v /var/lib/iscsi/:/var/lib/iscsi/ \
+	-v /dev:/dev \
 	-p 8811:8811 \
 	${DOCKER_REPO}/${PROJ_NAME}:$(TAG) \
 	/iscsi-target-api -v=2 --logtostderr=true \
@@ -51,7 +52,7 @@ build-img:
 
 build-in-docker:
 	rm -rf bin/*
-	CGO_ENABLED=0 GOOS=linux go build -mod=vendor \
+	CGO_ENABLED=1 GOOS=linux go build -mod=vendor \
 	-ldflags '-X "main.buildTime='"${buildTime}"'" -X "main.commitID='"${COMMIT}"'"' \
 	-a -installsuffix cgo -o bin/${PROJ_NAME} cmd/main.go
 
