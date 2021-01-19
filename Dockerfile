@@ -1,11 +1,13 @@
 FROM centos:7 as build
 
-RUN mkdir /iscsi-target-api
-WORKDIR /iscsi-target-api
-
 RUN yum update -y ; \
 yum install -y epel-release ; \
-yum install -y golang device-mapper-devel lvm2-devel gcc automake autoconf libtool make
+yum install -y scsi-target-utils device-mapper-devel lvm2-devel
+
+RUN yum install -y golang gcc automake autoconf libtool make
+
+RUN mkdir /iscsi-target-api
+WORKDIR /iscsi-target-api
 
 # COPY go.mod and go.sum files to the workspace
 COPY go.mod .
@@ -20,8 +22,8 @@ FROM centos:7
 
 RUN yum update -y ; \
 yum install -y epel-release ; \
-yum install -y scsi-target-utils device-mapper-devel lvm2-devel; \
-yum clean all
+yum install -y scsi-target-utils device-mapper-devel lvm2-devel
+RUN yum clean all
 
 RUN sed -i 's/tgtd_count=`pidof tgtd | wc -w`/tgtd_count\=1/g'  /usr/sbin/tgt-setup-lun
 

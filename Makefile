@@ -16,7 +16,9 @@ endif
 
 
 run:
-	./bin/${PROJ_NAME} --logtostderr=true --v=2
+	./bin/${PROJ_NAME} --logtostderr=true --v=2 \
+	--manager-type=tgtd --volume-image-path=/var/lib/iscsi \
+	--api-username=admin --api-password=password
 
 test:
 	go test  ./...  -v  -cover -count=1 --logtostderr=true
