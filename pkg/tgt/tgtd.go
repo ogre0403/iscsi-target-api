@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"sync/atomic"
 )
@@ -101,7 +100,6 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 }
 
 // todo: refact to volume
-// todo: size unit
 func lvmProvision(cfg *cfg.VolumeCfg) error {
 
 	vgo, err := lvm.VgOpen(cfg.Group, "w")
@@ -112,7 +110,7 @@ func lvmProvision(cfg *cfg.VolumeCfg) error {
 
 	defer vgo.Close()
 
-	_, err = vgo.CreateLvLinear(cfg.Name, 1024*1024*12)
+	_, err = vgo.CreateLvLinear(cfg.Name, uint64(lvm.UnitTranslate(cfg.Size, cfg.Unit, lvm.B)))
 
 	if err != nil {
 		return err
@@ -126,10 +124,8 @@ func lvmResize(cfg *cfg.VolumeCfg) error {
 }
 
 func tgtimgPovision(t *tgtd, cfg *cfg.VolumeCfg) error {
-	r, _ := regexp.Compile("[0-9]+m$")
-	if !r.MatchString(cfg.Size) {
-		return errors.New("size is media size (in megabytes), eg. 1024m")
-	}
+
+	sizeUnit := fmt.Sprintf("%dm", uint64(lvm.UnitTranslate(cfg.Size, cfg.Unit, lvm.MiB)))
 
 	fullImgPath := t.BaseImagePath + "/" + cfg.Group + "/" + cfg.Name
 
@@ -146,7 +142,7 @@ func tgtimgPovision(t *tgtd, cfg *cfg.VolumeCfg) error {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s --file %s ", t.tgtimgCmd, cfg.Size, fullImgPath),
+		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s --file %s ", t.tgtimgCmd, sizeUnit, fullImgPath),
 	)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

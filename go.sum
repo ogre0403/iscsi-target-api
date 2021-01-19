@@ -30,6 +30,8 @@ github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742 h1:Esafd1046DLD
 github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
 github.com/ogre0403/go-lvm v0.0.0-20210118085516-700544236fc0 h1:l097L8tyO7InkHDpW2CKO4MjADwIP0v87bFLOdhISvQ=
 github.com/ogre0403/go-lvm v0.0.0-20210118085516-700544236fc0/go.mod h1:MvTW/SgExpEx6SoSFf2V7HimVJdnzi1cqPRLdXq/E0w=
+github.com/ogre0403/go-lvm v0.0.0-20210119031620-fbff3b7ac26c h1:/nMWnPGS9to8HWKrUK7B7BoJn73WmK0pduy7fauPkWQ=
+github.com/ogre0403/go-lvm v0.0.0-20210119031620-fbff3b7ac26c/go.mod h1:MvTW/SgExpEx6SoSFf2V7HimVJdnzi1cqPRLdXq/E0w=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

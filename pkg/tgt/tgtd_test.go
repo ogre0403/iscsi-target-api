@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -40,7 +41,8 @@ func TestTgtd_CreateVolume(t *testing.T) {
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 	err := mgr.CreateVolume(vc)
 	assert.NoError(t, err)
@@ -57,7 +59,8 @@ func TestTgtd_CreateVolumeWrongType(t *testing.T) {
 		Type:  "aa",
 		Name:  "test.img",
 		Group: "vg-0",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 
 	err := mgr.CreateVolume(lvmv)
@@ -69,7 +72,8 @@ func TestTgtd_CreateVolume_LVM(t *testing.T) {
 		Type:  LVM,
 		Name:  "test",
 		Group: "vg-0",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 
 	err := mgr.CreateVolume(lvmv)
@@ -86,7 +90,8 @@ func TestTgtd_AttachLun(t *testing.T) {
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 
 	lc := &cfg.LunCfg{
@@ -124,7 +129,8 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 		Type:  LVM,
 		Name:  "test",
 		Group: "vg-0",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 
 	lc := &cfg.LunCfg{
@@ -162,7 +168,8 @@ func TestTgtd_Reload(t *testing.T) {
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",
-		Size:  "100m",
+		Size:  100,
+		Unit:  lvm.MiB,
 	}
 
 	lc := &cfg.LunCfg{
@@ -173,7 +180,6 @@ func TestTgtd_Reload(t *testing.T) {
 	err := mgr.CreateVolume(vc)
 	assert.NoError(t, err)
 
-	//fullImgPath := mgr.BaseImagePath + "/" + vc.Group + "/" + vc.Name
 	t.Cleanup(func() {
 		mgr.DeleteVolume(vc)
 	})

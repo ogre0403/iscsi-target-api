@@ -7,7 +7,8 @@ type ManagerCfg struct {
 
 type VolumeCfg struct {
 	Group string `json:"group"`
-	Size  string `json:"size"`
+	Size  uint64 `json:"size"`
+	Unit  string `json:"unit"`
 	Name  string `json:"name"`
 	Type  string `json:"type"`
 
