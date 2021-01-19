@@ -37,9 +37,10 @@ func TestNewTarget(t *testing.T) {
 func TestTgtd_CreateVolume(t *testing.T) {
 
 	vc := &cfg.VolumeCfg{
-		Name: "test.img",
-		Path: "p",
-		Size: "100m",
+		Type:  TGTIMG,
+		Name:  "test.img",
+		Group: "p",
+		Size:  "100m",
 	}
 	err := mgr.CreateVolume(vc)
 	assert.NoError(t, err)
@@ -51,11 +52,79 @@ func TestTgtd_CreateVolume(t *testing.T) {
 
 }
 
+func TestTgtd_CreateVolumeWrongType(t *testing.T) {
+	lvmv := &cfg.VolumeCfg{
+		Type:  "aa",
+		Name:  "test.img",
+		Group: "vg-0",
+		Size:  "100m",
+	}
+
+	err := mgr.CreateVolume(lvmv)
+	assert.Error(t, err)
+}
+
+func TestTgtd_CreateVolume_LVM(t *testing.T) {
+	lvmv := &cfg.VolumeCfg{
+		Type:  LVM,
+		Name:  "test",
+		Group: "vg-0",
+		Size:  "100m",
+	}
+
+	err := mgr.CreateVolume(lvmv)
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		err := mgr.DeleteVolume(lvmv)
+		assert.NoError(t, err)
+	})
+}
+
 func TestTgtd_AttachLun(t *testing.T) {
 	vc := &cfg.VolumeCfg{
-		Name: "test.img",
-		Path: "p",
-		Size: "100m",
+		Type:  TGTIMG,
+		Name:  "test.img",
+		Group: "p",
+		Size:  "100m",
+	}
+
+	lc := &cfg.LunCfg{
+		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
+		Volume:    vc,
+	}
+
+	err := mgr.CreateVolume(vc)
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		mgr.DeleteVolume(vc)
+	})
+
+	err = mgr.AttachLun(lc)
+	assert.NoError(t, err)
+
+	err = mgr.AttachLun(lc)
+	if assert.Error(t, err) {
+		assert.Equal(t, errors.New(fmt.Sprintf("target %s already exist", lc.TargetIQN)), err)
+	}
+
+	t.Cleanup(func() {
+		cfg := &cfg.TargetCfg{
+			TargetIQN: lc.TargetIQN,
+		}
+		err := mgr.DeleteTarget(cfg)
+		assert.NoError(t, err)
+	})
+
+}
+
+func TestTgtd_AttachLVMLun(t *testing.T) {
+	vc := &cfg.VolumeCfg{
+		Type:  LVM,
+		Name:  "test",
+		Group: "vg-0",
+		Size:  "100m",
 	}
 
 	lc := &cfg.LunCfg{
@@ -90,9 +159,10 @@ func TestTgtd_AttachLun(t *testing.T) {
 
 func TestTgtd_Reload(t *testing.T) {
 	vc := &cfg.VolumeCfg{
-		Name: "test.img",
-		Path: "p",
-		Size: "100m",
+		Type:  TGTIMG,
+		Name:  "test.img",
+		Group: "p",
+		Size:  "100m",
 	}
 
 	lc := &cfg.LunCfg{
@@ -103,7 +173,7 @@ func TestTgtd_Reload(t *testing.T) {
 	err := mgr.CreateVolume(vc)
 	assert.NoError(t, err)
 
-	//fullImgPath := mgr.BaseImagePath + "/" + vc.Path + "/" + vc.Name
+	//fullImgPath := mgr.BaseImagePath + "/" + vc.Group + "/" + vc.Name
 	t.Cleanup(func() {
 		mgr.DeleteVolume(vc)
 	})

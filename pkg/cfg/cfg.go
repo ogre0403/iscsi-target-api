@@ -6,13 +6,13 @@ type ManagerCfg struct {
 }
 
 type VolumeCfg struct {
-	Path string `json:"path"`
-	Size string `json:"size"`
-	Name string `json:"name"`
+	Group string `json:"group"`
+	Size  string `json:"size"`
+	Name  string `json:"name"`
+	Type  string `json:"type"`
 
 	// todo: support in the future
-	Type          string `json:"type"`
-	ThinProvision bool   `json:"thinProvision"`
+	ThinProvision bool `json:"thinProvision"`
 }
 
 type LunCfg struct {

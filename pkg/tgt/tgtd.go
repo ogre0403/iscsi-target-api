@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
+	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 const (
 	TGTADMIN    = "tgt-admin"
 	TGTIMG      = "tgtimg"
+	LVM         = "lvm"
 	TGTSETUPLUN = "tgt-setup-lun"
 	TARGETCONF  = "/etc/tgt/conf.d/iscsi-target-api.conf"
 	BASEIMGPATH = "/var/lib/iscsi/"
@@ -83,22 +85,60 @@ func isCmdExist(t *tgtd) (bool, error) {
 	return true, nil
 }
 
-// todo: support LVM based volume
 func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 
+	switch cfg.Type {
+	case TGTIMG:
+		log.V(2).Infof("Provision volume by %s ", TGTIMG)
+		return tgtimgPovision(t, cfg)
+	case LVM:
+		log.V(2).Infof("Provision volume by %s ", LVM)
+		return lvmProvision(cfg)
+	default:
+		log.Errorf("%s is not supported volume provision tool", cfg.Type)
+		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Type))
+	}
+}
+
+// todo: refact to volume
+// todo: size unit
+func lvmProvision(cfg *cfg.VolumeCfg) error {
+
+	vgo, err := lvm.VgOpen(cfg.Group, "w")
+
+	if err != nil {
+		return err
+	}
+
+	defer vgo.Close()
+
+	_, err = vgo.CreateLvLinear(cfg.Name, 1024*1024*12)
+
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// todo: support LVM resize
+func lvmResize(cfg *cfg.VolumeCfg) error {
+	return errors.New("not implemented error")
+}
+
+func tgtimgPovision(t *tgtd, cfg *cfg.VolumeCfg) error {
 	r, _ := regexp.Compile("[0-9]+m$")
 	if !r.MatchString(cfg.Size) {
 		return errors.New("size is media size (in megabytes), eg. 1024m")
 	}
 
-	fullImgPath := t.BaseImagePath + "/" + cfg.Path + "/" + cfg.Name
+	fullImgPath := t.BaseImagePath + "/" + cfg.Group + "/" + cfg.Name
 
 	if _, err := os.Stat(fullImgPath); !os.IsNotExist(err) {
 		return errors.New(fmt.Sprintf("Image %s alreay exist", fullImgPath))
 	}
 
-	if _, err := os.Stat(t.BaseImagePath + "/" + cfg.Path); os.IsNotExist(err) {
-		if err := os.MkdirAll(t.BaseImagePath+"/"+cfg.Path, 0755); err != nil {
+	if _, err := os.Stat(t.BaseImagePath + "/" + cfg.Group); os.IsNotExist(err) {
+		if err := os.MkdirAll(t.BaseImagePath+"/"+cfg.Group, 0755); err != nil {
 			return errors.New("unable to create directory to provision new volume: " + err.Error())
 		}
 	}
@@ -115,17 +155,26 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
 	log.Info(string(stdout.Bytes()))
-
 	return nil
 }
 
 func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 
+	var volPath string
+
+	switch cfg.Volume.Type {
+	case TGTIMG:
+		volPath = t.BaseImagePath + "/" + cfg.Volume.Group + "/" + cfg.Volume.Name
+	case LVM:
+		volPath = "/dev/" + cfg.Volume.Group + "/" + cfg.Volume.Name
+	default:
+		log.Errorf("%s is not supported volume provision tool", cfg.Volume.Type)
+		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Volume.Type))
+	}
+
 	if queryTargetId(cfg.TargetIQN) != "-1" {
 		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
 	}
-
-	volPath := t.BaseImagePath + "/" + cfg.Volume.Path + "/" + cfg.Volume.Name
 
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c",
@@ -169,7 +218,23 @@ func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
 
 func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
 
-	volSubDir := t.BaseImagePath + "/" + cfg.Path
+	switch cfg.Type {
+	case TGTIMG:
+		log.V(2).Infof("Delete volume by %s ", TGTIMG)
+		return tgtimgDelete(t, cfg)
+	case LVM:
+		log.V(2).Infof("Delete volume by %s ", LVM)
+		return lvmDelete(cfg)
+	default:
+		log.Errorf("%s is not supported volume provision tool", cfg.Type)
+		return errors.New(fmt.Sprintf("%s is not supported volume provision tool", cfg.Type))
+	}
+}
+
+// todo: refact to volume
+func tgtimgDelete(t *tgtd, cfg *cfg.VolumeCfg) error {
+
+	volSubDir := t.BaseImagePath + "/" + cfg.Group
 	fullImgPath := volSubDir + "/" + cfg.Name
 	if err := os.Remove(fullImgPath); err != nil {
 		return err
@@ -181,7 +246,28 @@ func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
 			return err
 		}
 	}
+	return nil
 
+}
+
+func lvmDelete(cfg *cfg.VolumeCfg) error {
+
+	vgo, err := lvm.VgOpen(cfg.Group, "w")
+	if err != nil {
+		return err
+	}
+	defer vgo.Close()
+
+	lv, err := vgo.LvFromName(cfg.Name)
+	if err != nil {
+		return err
+	}
+
+	// Remove LV
+	err = lv.Remove()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -256,7 +342,7 @@ func (t *tgtd) AttachLunAPI(c *gin.Context) {
 func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 
 	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c,http.StatusTooManyRequests,"Another API is executing" )
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
 		return
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
@@ -280,7 +366,7 @@ func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 
 	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c,http.StatusTooManyRequests,"Another API is executing" )
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
 		return
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
