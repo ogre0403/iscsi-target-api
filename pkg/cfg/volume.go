@@ -51,15 +51,42 @@ func (v *VolumeCfg) Create() error {
 	}
 }
 
-// todo: thin provision
-func (v *VolumeCfg) lvmProvision() error {
-
+func (v *VolumeCfg) deletePrecheck() error {
 	if v.Group == "" {
 		return errors.New("volume group name is not defined")
 	}
 
 	if v.Name == "" {
 		return errors.New("logical volume name is not defined")
+	}
+
+	return nil
+}
+
+func (v *VolumeCfg) provisionPrecheck() error {
+
+	if err := v.deletePrecheck(); err != nil {
+		return err
+	}
+
+	if v.Size == 0 {
+		return errors.New("logical volume size is not defined")
+	}
+
+	if _, exist := lvm.SizeUnit[v.Unit]; !exist {
+		return errors.New(fmt.Sprintf("%s is not supported unit", v.Unit))
+	}
+
+	_, err := v.Path()
+	return err
+
+}
+
+// todo: thin provision
+func (v *VolumeCfg) lvmProvision() error {
+
+	if err := v.provisionPrecheck(); err != nil {
+		return err
 	}
 
 	vgo, err := lvm.VgOpen(v.Group, "w")
@@ -80,18 +107,16 @@ func (v *VolumeCfg) lvmProvision() error {
 
 func (v *VolumeCfg) tgtimgProvision() error {
 
-	if v.Name == "" {
-		return errors.New("logical volume name is not defined")
+	if err := v.provisionPrecheck(); err != nil {
+		return err
 	}
 
 	sizeUnit := fmt.Sprintf("%dm", uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.MiB)))
 
-	fullImgPath, err := v.Path()
-	if err != nil {
-		return err
-	}
+	// already check in preCheck
+	fullImgPath, _ := v.Path()
 
-	if _, err := os.Stat(fullImgPath); !os.IsNotExist(err) {
+	if exist, _ := v.IsExist(); exist {
 		return errors.New(fmt.Sprintf("Image %s alreay exist", fullImgPath))
 	}
 
@@ -117,7 +142,7 @@ func (v *VolumeCfg) tgtimgProvision() error {
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
-	log.Info(string(stdout.Bytes()))
+	log.V(2).Info(string(stdout.Bytes()))
 	return nil
 }
 
@@ -137,8 +162,8 @@ func (v *VolumeCfg) Delete() error {
 
 func (v *VolumeCfg) tgtimgDelete() error {
 
-	if v.Name == "" {
-		return errors.New("image volume name is not defined")
+	if err := v.deletePrecheck(); err != nil {
+		return err
 	}
 
 	volSubDir := v.baseImagePath + "/" + v.Group
@@ -159,12 +184,8 @@ func (v *VolumeCfg) tgtimgDelete() error {
 
 func (v *VolumeCfg) lvmDelete() error {
 
-	if v.Group == "" {
-		return errors.New("volume group name is not defined")
-	}
-
-	if v.Name == "" {
-		return errors.New("logical volume name is not defined")
+	if err := v.deletePrecheck(); err != nil {
+		return err
 	}
 
 	vgo, err := lvm.VgOpen(v.Group, "w")
