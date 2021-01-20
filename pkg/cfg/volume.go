@@ -17,13 +17,12 @@ const (
 )
 
 type VolumeCfg struct {
-	Group string `json:"group"`
-	Size  uint64 `json:"size"`
-	Unit  string `json:"unit"`
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	// todo: support in the future
-	ThinProvision bool `json:"thinProvision"`
+	Group         string `json:"group"`
+	Size          uint64 `json:"size"`
+	Unit          string `json:"unit"`
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	ThinProvision bool   `json:"thinProvision"`
 
 	baseImagePath string
 	tgtimgCmd     string
@@ -52,6 +51,7 @@ func (v *VolumeCfg) Create() error {
 	}
 }
 
+// todo: thin provision
 func (v *VolumeCfg) lvmProvision() error {
 
 	if v.Group == "" {
@@ -103,8 +103,13 @@ func (v *VolumeCfg) tgtimgProvision() error {
 
 	var stdout, stderr bytes.Buffer
 
+	thin := ""
+	if v.ThinProvision == true {
+		thin = "--thin-provisioning"
+	}
+
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s --file %s ", v.tgtimgCmd, sizeUnit, fullImgPath),
+		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s %s --file %s ", v.tgtimgCmd, sizeUnit, thin, fullImgPath),
 	)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr

@@ -83,6 +83,31 @@ $ curl -XDELETE \
   http://127.0.0.1:8811/deleteVol
 ```
 
+## Json body
+
+* Volume
+    ```json
+    {
+      "type": "tgtimg", 
+      "group": "test",
+      "name": "test.img",
+      "size": 10,
+      "unit": "MiB",
+      "thinProvision": false
+    }
+    ```
+
+* Target 
+    ```json
+    {
+      "targetIQN": "iqn.2017-07.k8s.default:myclaim", 
+      "volume": {
+          "type": "tgtimg",
+          "group": "test",
+          "name": "test.img",
+      }
+    }
+    ```
 
 ## Limitation
 
@@ -112,6 +137,8 @@ $ curl -XDELETE \
     
     $ tgt-setup-lun -n iqn.2017-07.com.hiroom2:debian-9  -d /var/lib/iscsi/test.img
     
+    # thin provision
+    $ tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params thin_provisioning=1
     
     $ tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
     $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/iscsi/10m-$i.img
