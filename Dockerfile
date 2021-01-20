@@ -27,5 +27,8 @@ RUN yum clean all
 
 RUN sed -i 's/tgtd_count=`pidof tgtd | wc -w`/tgtd_count\=1/g'  /usr/sbin/tgt-setup-lun
 
+RUN sed -i 's/udev_rules = 1/udev_rules = 0/g' /etc/lvm/lvm.conf && \
+    sed -i 's/udev_sync = 1/udev_sync = 0/g' /etc/lvm/lvm.conf
+
 COPY --from=build /iscsi-target-api/bin/iscsi-target-api /
 CMD ["/iscsi-target-api","-v","2", "logtostderr","true"]

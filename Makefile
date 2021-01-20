@@ -41,6 +41,7 @@ run-in-docker:
 	-v /var/run:/var/run \
 	-v /var/lib/iscsi/:/var/lib/iscsi/ \
 	-v /dev:/dev \
+	-v /sys/kernel/config:/sys/kernel/config -v /run/lvm:/run/lvm -v /lib/modules:/lib/modules \
 	-p 8811:8811 \
 	${DOCKER_REPO}/${PROJ_NAME}:$(TAG) \
 	/iscsi-target-api -v=2 --logtostderr=true \
