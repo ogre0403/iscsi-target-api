@@ -79,3 +79,9 @@ func TestVolumeCfg_lvmProvision(t *testing.T) {
 		assert.NoError(t, err)
 	})
 }
+
+func TestVolumeCfg_lvmThinProvision(t *testing.T) {
+	LVMVol.ThinProvision = true
+	e := LVMVol.Create()
+	assert.Error(t, e)
+}

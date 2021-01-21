@@ -18,7 +18,8 @@ endif
 run:
 	./bin/${PROJ_NAME} --logtostderr=true --v=2 \
 	--manager-type=tgtd --volume-image-path=/var/lib/iscsi \
-	--api-username=admin --api-password=password
+	--api-username=admin --api-password=password \
+	--thin-pool-name=pool0
 
 test:
 	go test  ./...  -v  -cover -count=1 --logtostderr=true
@@ -46,7 +47,8 @@ run-in-docker:
 	${DOCKER_REPO}/${PROJ_NAME}:$(TAG) \
 	/iscsi-target-api -v=2 --logtostderr=true \
 	--manager-type=tgtd --volume-image-path=/var/lib/iscsi \
-	--api-username=admin --api-password=password
+	--api-username=admin --api-password=password \
+	--thin-pool-name=pool0
 
 
 build-img:

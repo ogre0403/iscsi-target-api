@@ -3,6 +3,7 @@ package cfg
 type ManagerCfg struct {
 	BaseImagePath string
 	TargetConf    string
+	ThinPool      string
 }
 
 type LunCfg struct {

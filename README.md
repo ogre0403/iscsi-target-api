@@ -93,7 +93,7 @@ $ curl -XDELETE \
       "name": "test.img",
       "size": 10,
       "unit": "MiB",
-      "thinProvision": false
+      "thin": false
     }
     ```
 
@@ -104,7 +104,7 @@ $ curl -XDELETE \
       "volume": {
           "type": "tgtimg",
           "group": "test",
-          "name": "test.img",
+          "name": "test.img"
       }
     }
     ```

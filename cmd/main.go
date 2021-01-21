@@ -22,6 +22,7 @@ func parserFlags() {
 	flag.Set("logtostderr", "true")
 	flag.StringVar(&c.TargetConf, "target-conf-file", tgt.TARGETCONF, "target config file path")
 	flag.StringVar(&c.BaseImagePath, "volume-image-path", tgt.BASEIMGPATH, "foldr to place volume image")
+	flag.StringVar(&c.ThinPool, "thin-pool-name", "pool0", "thin pool name, if LVM is used")
 	flag.StringVar(&targetManagerType, "manager-type", tgt.TgtdType, "target manager tool type")
 	flag.IntVar(&sc.Port, "api-port", 8811, "api server port")
 	flag.StringVar(&sc.Username, "api-username", "admin", "api admin name")
