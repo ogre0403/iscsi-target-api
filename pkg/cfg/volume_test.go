@@ -84,4 +84,18 @@ func TestVolumeCfg_lvmThinProvision(t *testing.T) {
 	LVMVol.ThinProvision = true
 	e := LVMVol.Create()
 	assert.Error(t, e)
+
+	LVMVol.ThinPool = "pool0"
+	e = LVMVol.Create()
+	assert.NoError(t, e)
+
+	vgo, _ := lvm.VgOpen("vg-0", "w")
+	lv, _ := vgo.LvFromName(LVMVol.Name)
+	assert.Equal(t, "V", string(lv.GetAttr()[0]))
+
+	t.Cleanup(func() {
+		err := LVMVol.lvmDelete()
+		assert.NoError(t, err)
+	})
+
 }

@@ -23,11 +23,11 @@ type VolumeCfg struct {
 	Name          string `json:"name"`
 	Type          string `json:"type"`
 	ThinProvision bool   `json:"thin"`
+	ThinPool      string `json:"pool"`
 
 	// These fields are target specified, should be defined in target manager
 	baseImagePath string
 	tgtimgCmd     string
-	thinPool      string
 }
 
 func (v *VolumeCfg) SetBaseImgPath(path string) {
@@ -36,10 +36,6 @@ func (v *VolumeCfg) SetBaseImgPath(path string) {
 
 func (v *VolumeCfg) SetTgtimgCmd(cmd string) {
 	v.tgtimgCmd = cmd
-}
-
-func (v *VolumeCfg) SetThinPool(pool string) {
-	v.thinPool = pool
 }
 
 func (v *VolumeCfg) Create() error {
@@ -103,13 +99,13 @@ func (v *VolumeCfg) lvmProvision() error {
 	defer vgo.Close()
 
 	if v.ThinProvision {
-		if v.thinPool == "" {
+		if v.ThinPool == "" {
 			return errors.New(
 				fmt.Sprintf("LVM volume %s/%s use thin provision, but thin pool is not defined ",
 					v.Group, v.Name))
 		}
-		_, err = vgo.CreateLvThin(v.thinPool, v.Name, uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.B)))
-		log.V(2).Infof("thin provision LVM volume %s/%s", v.thinPool, v.Name)
+		_, err = vgo.CreateLvThin(v.ThinPool, v.Name, uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.B)))
+		log.V(2).Infof("thin provision LVM volume %s/%s", v.ThinPool, v.Name)
 		return err
 	} else {
 		_, err = vgo.CreateLvLinear(v.Name, uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.B)))

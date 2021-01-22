@@ -273,7 +273,6 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 func (t *tgtd) setupVol(v *cfg.VolumeCfg) {
 	v.SetBaseImgPath(t.BaseImagePath)
 	v.SetTgtimgCmd(t.tgtimgCmd)
-	v.SetThinPool(t.thinPool)
 }
 
 func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
