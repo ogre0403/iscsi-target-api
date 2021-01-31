@@ -68,6 +68,8 @@ github.com/ogre0403/go-lvm v0.0.0-20210120112830-97e463ebcef5 h1:NRGdr59pXxNXBs9
 github.com/ogre0403/go-lvm v0.0.0-20210120112830-97e463ebcef5/go.mod h1:MvTW/SgExpEx6SoSFf2V7HimVJdnzi1cqPRLdXq/E0w=
 github.com/ogre0403/go-lvm v0.0.0-20210121073657-b4206cefb7c9 h1:X4b+bK7Bebb/r3dqMfKMHJbQGYJ+d/N1fjmwK4hNPRo=
 github.com/ogre0403/go-lvm v0.0.0-20210121073657-b4206cefb7c9/go.mod h1:MvTW/SgExpEx6SoSFf2V7HimVJdnzi1cqPRLdXq/E0w=
+github.com/ogre0403/go-lvm v0.0.0-20210131013857-bd94e50c5f52 h1:Ljyb3bAzSa2pE/qCLXXk+yOyUR4P8H4olOYv2/NaIxQ=
+github.com/ogre0403/go-lvm v0.0.0-20210131013857-bd94e50c5f52/go.mod h1:bpaShX4nPB28nF3t974RMk//0R9TA9cQbUWeyJciBV8=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=

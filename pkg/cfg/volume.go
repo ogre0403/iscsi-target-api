@@ -90,26 +90,16 @@ func (v *VolumeCfg) lvmProvision() error {
 		return err
 	}
 
-	vgo, err := lvm.VgOpen(v.Group, "w")
-
-	if err != nil {
-		return err
-	}
-
-	defer vgo.Close()
-
 	if v.ThinProvision {
 		if v.ThinPool == "" {
 			return errors.New(
 				fmt.Sprintf("LVM volume %s/%s use thin provision, but thin pool is not defined ",
 					v.Group, v.Name))
 		}
-		_, err = vgo.CreateLvThin(v.ThinPool, v.Name, uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.B)))
 		log.V(2).Infof("thin provision LVM volume %s/%s", v.ThinPool, v.Name)
-		return err
+		return lvm.BD_LVM_ThLvCreate(v.Group, v.ThinPool, v.Name, lvm.HumanReadableToBytes(v.Size, v.Unit))
 	} else {
-		_, err = vgo.CreateLvLinear(v.Name, uint64(lvm.UnitTranslate(v.Size, v.Unit, lvm.B)))
-		return err
+		return lvm.BD_LVM_LvCreate(v.Group, v.Name, lvm.HumanReadableToBytes(v.Size, v.Unit))
 	}
 }
 
@@ -192,28 +182,10 @@ func (v *VolumeCfg) tgtimgDelete() error {
 }
 
 func (v *VolumeCfg) lvmDelete() error {
-
 	if err := v.deletePrecheck(); err != nil {
 		return err
 	}
-
-	vgo, err := lvm.VgOpen(v.Group, "w")
-	if err != nil {
-		return err
-	}
-	defer vgo.Close()
-
-	lv, err := vgo.LvFromName(v.Name)
-	if err != nil {
-		return err
-	}
-
-	// Remove LV
-	err = lv.Remove()
-	if err != nil {
-		return err
-	}
-	return nil
+	return lvm.BD_LVM_LvRemove(v.Group, v.Name)
 }
 
 func (v *VolumeCfg) Path() (string, error) {

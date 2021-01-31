@@ -2,6 +2,8 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
+	log "github.com/golang/glog"
+	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 	"strconv"
@@ -21,6 +23,13 @@ type APIServer struct {
 }
 
 func NewAPIServer(m tgt.TargetManager, conf *cfg.ServerCfg) *APIServer {
+
+	log.Info("initialize lvm plugin")
+	err := lvm.Initialize()
+	if err != nil {
+		log.Errorf("initialize lvm plugin fail: %s", err.Error())
+		return nil
+	}
 
 	s := &APIServer{
 		router:    gin.Default(),
