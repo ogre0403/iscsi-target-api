@@ -120,8 +120,8 @@ $ curl -XDELETE \
 * One target has multiple LUNs
     * One target represent on namespace, one LUN represent one PV . 
 * Support `iscsitarget` manage tool
-* Support LVM 
-* Support volume thin provision 
+* ~~Support LVM~~ 
+* ~~Support volume thin provision~~ 
 
 
 ## Reference

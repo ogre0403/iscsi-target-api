@@ -1,13 +1,7 @@
-FROM centos:7 as base
+FROM golang:1.15.2 as build
 
-RUN yum update -y ; \
-yum install -y epel-release ; \
-yum install -y scsi-target-utils libblockdev-lvm-devel.x86_64 libblockdev-devel.x86_64
-
-
-FROM base as build
-
-RUN yum install -y golang gcc automake autoconf libtool make
+RUN apt-get update -y ; \
+apt-get install -y libblockdev-lvm-dev libblockdev-dev lvm2
 
 RUN mkdir /iscsi-target-api
 WORKDIR /iscsi-target-api
@@ -22,8 +16,12 @@ RUN if [ ! -d "/iscsi-target-api/vendor" ]; then  go mod vendor; fi
 RUN make build-in-docker
 
 
-FROM base
-RUN yum clean all
+FROM centos:7
+
+RUN yum update -y ; \
+yum install -y epel-release ; \
+yum install -y scsi-target-utils libblockdev-lvm-devel.x86_64 libblockdev-devel.x86_64 \
+yum clean all
 
 RUN sed -i 's/tgtd_count=`pidof tgtd | wc -w`/tgtd_count\=1/g'  /usr/sbin/tgt-setup-lun
 
