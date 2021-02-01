@@ -9,6 +9,7 @@ type ManagerCfg struct {
 type LunCfg struct {
 	TargetIQN string     `json:"targetIQN"`
 	Volume    *VolumeCfg `json:"volume"`
+	AclIpList []string   `json:"aclList"`
 }
 
 type TargetCfg struct {

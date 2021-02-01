@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"net"
 	"net/http"
 	"os/exec"
 	"strings"
@@ -104,9 +105,16 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
 	}
 
+	for _, ip := range cfg.AclIpList {
+		_, _, e := net.ParseCIDR(ip)
+		if e != nil && net.ParseIP(ip) == nil {
+			return errors.New(fmt.Sprintf("%s is invalid ip format ", ip))
+		}
+	}
+	aclList := strings.Join(cfg.AclIpList, " ")
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s  -n %s -d %s ", t.tgtsetuplunCmd, cfg.TargetIQN, volPath),
+		fmt.Sprintf("%s  -n %s -d %s %s", t.tgtsetuplunCmd, cfg.TargetIQN, volPath, aclList),
 	)
 
 	log.Info(cmd.String())

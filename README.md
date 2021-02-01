@@ -105,7 +105,8 @@ $ curl -XDELETE \
           "type": "tgtimg",
           "group": "test",
           "name": "test.img"
-      }
+      },
+      "aclList": ["192.168.1.0/24"]
     }
     ```
 
@@ -116,6 +117,8 @@ $ curl -XDELETE \
 ## TODO
 
 * Support iSCSI ACL
+    * CHAP
+    * ~~Initiator IP~~
 * ~~add API Authorization~~
 * One target has multiple LUNs
     * One target represent on namespace, one LUN represent one PV . 
