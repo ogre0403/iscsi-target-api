@@ -182,4 +182,12 @@ $ make run-in-docker
     $ tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
     $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
     
+    # setup ACL
+    # accept all 
+    $ tgtadm --lld iscsi --op bind --mode target --tid 1 -I ALL
+    # accept ip
+    $ tgtadm --lld iscsi --op bind --mode target --tid 1 -I 192.168.1.1
+  
+    # remove ACL 
+    $ tgtadm --lld iscsi --op unbind --mode target --tid 1 -I 192.168.1.1
     ```

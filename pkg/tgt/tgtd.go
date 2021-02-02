@@ -101,6 +101,13 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 		return err
 	}
 
+	for _, ip := range cfg.AclIpList {
+		_, _, e := net.ParseCIDR(ip)
+		if e != nil && net.ParseIP(ip) == nil {
+			return errors.New(fmt.Sprintf("%s is invalid ip format ", ip))
+		}
+	}
+
 	if queryTargetId(cfg.TargetIQN) != "-1" {
 		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
 	}
@@ -136,14 +143,34 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 	}
 	log.Info(string(stdout.Bytes()))
 
-	// todo: setup ACL
-	for _, ip := range cfg.AclIpList {
-		_, _, e := net.ParseCIDR(ip)
-		if e != nil && net.ParseIP(ip) == nil {
-			return errors.New(fmt.Sprintf("%s is invalid ip format ", ip))
+	if len(cfg.AclIpList) == 0 {
+		cmd = exec.Command("/bin/sh", "-c",
+			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %d -I %s ", t.tgtadmCmd, tid+1, "ALL"),
+		)
+		log.Info(cmd.String())
+
+		stderr.Reset()
+		stdout.Reset()
+		if err := cmd.Run(); err != nil {
+			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 		}
+		log.Info(string(stdout.Bytes()))
+		return nil
 	}
-	//aclList := strings.Join(cfg.AclIpList, " ")
+
+	for _, ip := range cfg.AclIpList {
+		cmd = exec.Command("/bin/sh", "-c",
+			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %d -I %s ", t.tgtadmCmd, tid+1, ip),
+		)
+		log.Info(cmd.String())
+
+		stderr.Reset()
+		stdout.Reset()
+		if err := cmd.Run(); err != nil {
+			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+		}
+		log.Info(string(stdout.Bytes()))
+	}
 
 	return nil
 }
