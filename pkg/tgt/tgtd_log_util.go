@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-func queryMaxTargetId() string {
+func queryMaxTargetId() int {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
@@ -22,7 +22,7 @@ func queryMaxTargetId() string {
 
 	if err := cmd.Run(); err != nil {
 		log.Info(fmt.Sprintf(string(stderr.Bytes())))
-		return "-1"
+		return -1
 	}
 
 	return _findMax(string(stdout.Bytes()))
@@ -49,7 +49,7 @@ func validateIQN(iqn string) bool {
 	return r.MatchString(iqn)
 }
 
-func _findMax(s string) string {
+func _findMax(s string) int {
 
 	scanner := bufio.NewScanner(bufio.NewReader(strings.NewReader(s)))
 
@@ -60,9 +60,12 @@ func _findMax(s string) string {
 		aa = append(aa, a)
 	}
 
+	if len(aa) == 0 {
+		return -1
+	}
 	sort.Ints(aa)
 
-	return strconv.Itoa(aa[len(aa)-1])
+	return aa[len(aa)-1]
 }
 
 func findTid(tartetIQN string) string {

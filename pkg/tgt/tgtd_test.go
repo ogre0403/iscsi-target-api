@@ -16,11 +16,11 @@ var mgr tgtd
 func init() {
 
 	mgr = tgtd{
-		BaseImagePath:  BASEIMGPATH,
-		tgtadminCmd:    TGTADMIN,
-		tgtimgCmd:      TGTIMG,
-		tgtsetuplunCmd: TGTSETUPLUN,
-		targetConf:     "/tmp/iscsi-target-api.conf",
+		BaseImagePath: BASEIMGPATH,
+		tgt_adminCmd:  TGT_ADMIN,
+		tgtimgCmd:     TGTIMG,
+		tgtadmCmd:     TGTADM,
+		targetConf:    "/tmp/iscsi-target-api.conf",
 	}
 }
 

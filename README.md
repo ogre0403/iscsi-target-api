@@ -61,27 +61,62 @@ $ make run-in-docker
 
 ## Curl Example
 
-```bash
-$ curl -XPOST \
-  -d '{"type":"tgtimg","name":"test.img","size":10,"unit":"MiB","group":"test"}' \
-  --user admin:password \
-  http://127.0.0.1:8811/createVol
+* Create Volume
+    * tgtimg volume
+        ```bash
+        $ curl -XPOST \
+          -d '{"type":"tgtimg","name":"test.img","size":10,"unit":"MiB","group":"test"}' \
+          --user admin:password \
+          http://127.0.0.1:8811/createVol
+        ```
+   
+    * LVM volume
+        ```bash
+        $ curl -XPOST \
+        -d '{"type":"lvm","name":"test","size":8,"unit":"MiB","group":"vg-0"}' \
+        --user admin:password \
+        http://127.0.0.1:8811/createVol
+        ```
+   
+* Create Thin provision Volume
 
-$ curl -XPOST \
-  -d '{"targetIQN":"iqn.2017-07.k8s.default:myclaim", "volume": {"type":"tgtimg","name":"test.img","group":"test"}}' \
-  --user admin:password \
-  http://127.0.0.1:8811/attachLun
+    * LVM Thin provision volume
+        ```bash
+        $ curl -XPOST \
+        -d '{"type":"lvm","name":"test","size":8,"unit":"MiB","group":"vg-0", "thin":true, "pool":"pool0"}' \
+        --user admin:password \
+        http://127.0.0.1:8811/createVol
+        ```   
+    * tgtimg thin provision volume
+        ```bash
+        $ curl -XPOST \
+          -d '{"type":"tgtimg","name":"test.img","size":10,"unit":"MiB","group":"test","thin":true}' \
+          --user admin:password \
+          http://127.0.0.1:8811/createVol
+        ```   
+* Create target & LUN      
+    ```
+    $ curl -XPOST \
+      -d '{"targetIQN":"iqn.2017-07.k8s.default:myclaim", "volume": {"type":"tgtimg","name":"test.img","group":"test"}}' \
+      --user admin:password \
+      http://127.0.0.1:8811/attachLun
+    ```
+* Delete target
+    ```
+    $ curl -XDELETE \
+      -d '{"targetIQN":"iqn.2017-07.k8s.default:myclaim"}' \
+      --user admin:password \
+      http://127.0.0.1:8811/deleteTar
+    ```
 
-$ curl -XDELETE \
-  -d '{"targetIQN":"iqn.2017-07.k8s.default:myclaim"}' \
-  --user admin:password \
-  http://127.0.0.1:8811/deleteTar
+* Delete Volume
 
-$ curl -XDELETE \
-  -d '{"type":"tgtimg","name":"test.img","group":"test"}' \
-  --user admin:password \
-  http://127.0.0.1:8811/deleteVol
-```
+    ```
+    $ curl -XDELETE \
+      -d '{"type":"tgtimg","name":"test.img","group":"test"}' \
+      --user admin:password \
+      http://127.0.0.1:8811/deleteVol
+    ```
 
 ## Json body
 
@@ -143,6 +178,8 @@ $ curl -XDELETE \
     # thin provision
     $ tgtadm --lld iscsi --mode logicalunit --op update --tid 1 --lun 1 --params thin_provisioning=1
     
+    # find tid first
     $ tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
-    $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun $i -b /var/lib/iscsi/10m-$i.img
+    $ tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
+    
     ```

@@ -15,22 +15,22 @@ import (
 )
 
 const (
-	TGTADMIN    = "tgt-admin"
+	TGT_ADMIN   = "tgt-admin"
+	TGTADM      = "tgtadm"
 	TGTIMG      = "tgtimg"
 	LVM         = "lvm"
-	TGTSETUPLUN = "tgt-setup-lun"
 	TARGETCONF  = "/etc/tgt/conf.d/iscsi-target-api.conf"
 	BASEIMGPATH = "/var/lib/iscsi/"
 )
 
 type tgtd struct {
-	locker         uint32
-	targetConf     string
-	BaseImagePath  string
-	tgtimgCmd      string
-	tgtadminCmd    string
-	tgtsetuplunCmd string
-	thinPool       string
+	locker        uint32
+	targetConf    string
+	BaseImagePath string
+	tgtimgCmd     string
+	tgt_adminCmd  string
+	tgtadmCmd     string
+	thinPool      string
 }
 
 func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
@@ -46,9 +46,9 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 		return nil, e
 	}
 
-	log.Info(fmt.Sprintf("found %s in %s", TGTADMIN, t.tgtadminCmd))
+	log.Info(fmt.Sprintf("found %s in %s", TGT_ADMIN, t.tgt_adminCmd))
 	log.Info(fmt.Sprintf("found %s in %s", TGTIMG, t.tgtimgCmd))
-	log.Info(fmt.Sprintf("found %s in %s", TGTSETUPLUN, t.tgtsetuplunCmd))
+	log.Info(fmt.Sprintf("found %s in %s", TGTADM, t.tgtadmCmd))
 
 	return t, nil
 
@@ -57,13 +57,13 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 func isCmdExist(t *tgtd) (bool, error) {
 
 	var stdout bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGTADMIN)
+	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGT_ADMIN)
 	cmd.Stdout = &stdout
 
 	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGTADMIN))
+		return false, errors.New(fmt.Sprintf("%s not found", TGT_ADMIN))
 	}
-	t.tgtadminCmd = strings.TrimSpace(string(stdout.Bytes()))
+	t.tgt_adminCmd = strings.TrimSpace(string(stdout.Bytes()))
 
 	var stdout1 bytes.Buffer
 	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTIMG)
@@ -74,12 +74,12 @@ func isCmdExist(t *tgtd) (bool, error) {
 	t.tgtimgCmd = strings.TrimSpace(string(stdout1.Bytes()))
 
 	var stdout2 bytes.Buffer
-	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTSETUPLUN)
+	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTADM)
 	cmd.Stdout = &stdout2
 	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGTSETUPLUN))
+		return false, errors.New(fmt.Sprintf("%s not found", TGTADM))
 	}
-	t.tgtsetuplunCmd = strings.TrimSpace(string(stdout2.Bytes()))
+	t.tgtadmCmd = strings.TrimSpace(string(stdout2.Bytes()))
 
 	return true, nil
 }
@@ -105,28 +105,45 @@ func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
 		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
 	}
 
+	tid := queryMaxTargetId()
+	var stdout, stderr bytes.Buffer
+
+	// create target
+	// eg. tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
+	cmd := exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %d -T %s ", t.tgtadmCmd, tid+1, cfg.TargetIQN),
+	)
+	log.Info(cmd.String())
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+	log.Info(string(stdout.Bytes()))
+
+	// setup LUN
+	// eg. tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
+	cmd = exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --lld iscsi --op new --mode logicalunit --tid %d --lun 1 -b %s ", t.tgtadmCmd, tid+1, volPath),
+	)
+	log.Info(cmd.String())
+
+	stderr.Reset()
+	stdout.Reset()
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+	log.Info(string(stdout.Bytes()))
+
+	// todo: setup ACL
 	for _, ip := range cfg.AclIpList {
 		_, _, e := net.ParseCIDR(ip)
 		if e != nil && net.ParseIP(ip) == nil {
 			return errors.New(fmt.Sprintf("%s is invalid ip format ", ip))
 		}
 	}
-	aclList := strings.Join(cfg.AclIpList, " ")
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s  -n %s -d %s %s", t.tgtsetuplunCmd, cfg.TargetIQN, volPath, aclList),
-	)
-
-	log.Info(cmd.String())
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-
-	log.Info(string(stdout.Bytes()))
+	//aclList := strings.Join(cfg.AclIpList, " ")
 
 	return nil
 }
@@ -139,7 +156,7 @@ func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
 	}
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --delete tid=%s", t.tgtadminCmd, tid),
+		fmt.Sprintf("%s --delete tid=%s", t.tgt_adminCmd, tid),
 	)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
@@ -161,7 +178,7 @@ func (t *tgtd) Save() error {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --dump > %s ", t.tgtadminCmd, t.targetConf),
+		fmt.Sprintf("%s --dump > %s ", t.tgt_adminCmd, t.targetConf),
 	)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
