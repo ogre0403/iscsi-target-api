@@ -19,7 +19,7 @@ func Test_ValidateIQN(t *testing.T) {
 func Test_FindMax(t *testing.T) {
 	s := "Target 3: iqn.2017-07.com.hiroom2:aaadd\nTarget 7: iqn.2017-07.com.hiroom2:aaadd\nTarget 1: iqn.2017-07.com.hiroom2:aaadd"
 	r := _findMax(s)
-	assert.Equal(t, "7", r)
+	assert.Equal(t, 7, r)
 }
 
 func Test_FindTd(t *testing.T) {

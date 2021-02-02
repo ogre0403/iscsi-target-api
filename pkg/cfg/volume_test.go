@@ -33,6 +33,10 @@ var TgtimgVol = VolumeCfg{
 const ImgPath = "/var/lib/iscsi"
 const TgtimgCmd = "tgtimg"
 
+func init() {
+	lvm.Initialize()
+}
+
 func TestVolumeCfg_SetBaseImgPath(t *testing.T) {
 	TgtimgVol.SetBaseImgPath(ImgPath)
 	TgtimgVol.SetTgtimgCmd(TgtimgCmd)
@@ -89,9 +93,9 @@ func TestVolumeCfg_lvmThinProvision(t *testing.T) {
 	e = LVMVol.Create()
 	assert.NoError(t, e)
 
-	vgo, _ := lvm.VgOpen("vg-0", "w")
-	lv, _ := vgo.LvFromName(LVMVol.Name)
-	assert.Equal(t, "V", string(lv.GetAttr()[0]))
+	vvv, e := lvm.BD_LVM_LvInfo(LVMVol.Group, LVMVol.Name)
+	assert.NoError(t, e)
+	assert.Equal(t, vvv.IsThinVolume(), true)
 
 	t.Cleanup(func() {
 		err := LVMVol.lvmDelete()

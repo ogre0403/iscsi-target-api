@@ -22,6 +22,7 @@ func init() {
 		tgtadmCmd:     TGTADM,
 		targetConf:    "/tmp/iscsi-target-api.conf",
 	}
+	lvm.Initialize()
 }
 
 func TestNewTarget(t *testing.T) {
