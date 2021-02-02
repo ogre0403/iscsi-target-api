@@ -22,7 +22,7 @@ func queryMaxTargetId() int {
 
 	if err := cmd.Run(); err != nil {
 		log.Info(fmt.Sprintf(string(stderr.Bytes())))
-		return -1
+		return 0
 	}
 
 	return _findMax(string(stdout.Bytes()))
@@ -61,7 +61,7 @@ func _findMax(s string) int {
 	}
 
 	if len(aa) == 0 {
-		return -1
+		return 0
 	}
 	sort.Ints(aa)
 
