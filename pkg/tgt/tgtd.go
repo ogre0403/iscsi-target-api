@@ -142,25 +142,19 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 	return nil
 }
 
-func (t *tgtd) DeleteTarget(cfg *cfg.TargetCfg) error {
+func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
 
-	tid := queryTargetId(cfg.TargetIQN)
+	tid := queryTargetId(target.TargetIQN)
 	if tid == "-1" {
-		return errors.New(fmt.Sprintf("target %s not found", cfg.TargetIQN))
-	}
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --delete tid=%s", t.tgt_adminCmd, tid),
-	)
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+		return errors.New(fmt.Sprintf("target %s not found", target.TargetIQN))
 	}
 
-	log.Info(string(stdout.Bytes()))
-	return nil
+	tar := cfg.TargetCfg{
+		TargetToolCli: t.tgt_adminCmd,
+		TargetId:      tid,
+		TargetIQN:     target.TargetIQN,
+	}
+	return tar.Delete()
 }
 
 func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {

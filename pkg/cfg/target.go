@@ -33,6 +33,25 @@ func (t *TargetCfg) Create() error {
 	return nil
 }
 
+// delete target
+// eg. tgt-admin --delete tid=1
+func (t *TargetCfg) Delete() error {
+
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("/bin/sh", "-c",
+		fmt.Sprintf("%s --delete tid=%s", t.TargetToolCli, t.TargetId),
+	)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+	}
+
+	log.Info(string(stdout.Bytes()))
+	return nil
+}
+
 // setup LUN
 // eg. tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
 func (t *TargetCfg) AddLun(volPath string) error {

@@ -22,7 +22,7 @@ run:
 	--thin-pool-name=pool0
 
 test:
-	go test  ./...  -v  -cover -count=1 --logtostderr=true
+	go test  ./...    -cover -count=1 --logtostderr=true
 
 
 build:
