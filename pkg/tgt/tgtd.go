@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync/atomic"
 )
@@ -24,6 +25,7 @@ const (
 )
 
 type tgtd struct {
+	chap          *cfg.CHAP
 	locker        uint32
 	targetConf    string
 	BaseImagePath string
@@ -40,6 +42,8 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 		targetConf:    mgrCfg.TargetConf,
 		thinPool:      mgrCfg.ThinPool,
 	}
+
+	t.chap = mgrCfg.CHAP
 
 	exist, e := isCmdExist(t)
 	if exist == false {
@@ -89,87 +93,50 @@ func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
 	return cfg.Create()
 }
 
-func (t *tgtd) AttachLun(cfg *cfg.LunCfg) error {
+func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 
-	t.setupVol(cfg.Volume)
-	volPath, err := cfg.Volume.Path()
+	t.setupVol(lun.Volume)
+	volPath, err := lun.Volume.Path()
 	if err != nil {
 		return err
 	}
 
-	if _, err := cfg.Volume.IsExist(); err != nil {
+	if _, err := lun.Volume.IsExist(); err != nil {
 		return err
 	}
 
-	for _, ip := range cfg.AclIpList {
+	for _, ip := range lun.AclIpList {
 		_, _, e := net.ParseCIDR(ip)
 		if e != nil && net.ParseIP(ip) == nil {
 			return errors.New(fmt.Sprintf("%s is invalid ip format ", ip))
 		}
 	}
 
-	if queryTargetId(cfg.TargetIQN) != "-1" {
-		return errors.New(fmt.Sprintf("target %s already exist", cfg.TargetIQN))
+	if queryTargetId(lun.TargetIQN) != "-1" {
+		return errors.New(fmt.Sprintf("target %s already exist", lun.TargetIQN))
 	}
 
 	tid := queryMaxTargetId()
-	var stdout, stderr bytes.Buffer
-
-	// create target
-	// eg. tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
-	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %d -T %s ", t.tgtadmCmd, tid+1, cfg.TargetIQN),
-	)
-	log.Info(cmd.String())
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-	log.Info(string(stdout.Bytes()))
-
-	// setup LUN
-	// eg. tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
-	cmd = exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --lld iscsi --op new --mode logicalunit --tid %d --lun 1 -b %s ", t.tgtadmCmd, tid+1, volPath),
-	)
-	log.Info(cmd.String())
-
-	stderr.Reset()
-	stdout.Reset()
-	if err := cmd.Run(); err != nil {
-		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-	}
-	log.Info(string(stdout.Bytes()))
-
-	if len(cfg.AclIpList) == 0 {
-		cmd = exec.Command("/bin/sh", "-c",
-			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %d -I %s ", t.tgtadmCmd, tid+1, "ALL"),
-		)
-		log.Info(cmd.String())
-
-		stderr.Reset()
-		stdout.Reset()
-		if err := cmd.Run(); err != nil {
-			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-		}
-		log.Info(string(stdout.Bytes()))
-		return nil
+	target := cfg.TargetCfg{
+		TargetToolCli: t.tgtadmCmd,
+		TargetId:      strconv.Itoa(tid + 1),
+		TargetIQN:     lun.TargetIQN,
 	}
 
-	for _, ip := range cfg.AclIpList {
-		cmd = exec.Command("/bin/sh", "-c",
-			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %d -I %s ", t.tgtadmCmd, tid+1, ip),
-		)
-		log.Info(cmd.String())
+	if err := target.Create(); err != nil {
+		return err
+	}
 
-		stderr.Reset()
-		stdout.Reset()
-		if err := cmd.Run(); err != nil {
-			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
-		}
-		log.Info(string(stdout.Bytes()))
+	if err := target.AddLun(volPath); err != nil {
+		return err
+	}
+
+	if err := target.SetACL(lun.AclIpList); err != nil {
+		return err
+	}
+
+	if err := target.AddCHAP(t.chap); err != nil {
+		return err
 	}
 
 	return nil
