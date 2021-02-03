@@ -29,10 +29,10 @@ func parserFlags() {
 	flag.IntVar(&sc.Port, "api-port", 8811, "api server port")
 	flag.StringVar(&sc.Username, "api-username", "admin", "api admin name")
 	flag.StringVar(&sc.Password, "api-password", "password", "api admin password")
-	flag.StringVar(&c.CHAP.CHAPUser, "chap-username", "admin", "CHAP username for initiator")
-	flag.StringVar(&c.CHAP.CHAPPassword, "chap-password", "password", "CHAP password for initiator")
-	flag.StringVar(&c.CHAP.CHAPUserIn, "chap-username-in", "admin", "CHAP username for target(s)")
-	flag.StringVar(&c.CHAP.CHAPPasswordIn, "chap-password-in", "password", "CHAP password for target(s)")
+	flag.StringVar(&c.CHAP.CHAPUser, "chap-username", "", "CHAP username for initiator")
+	flag.StringVar(&c.CHAP.CHAPPassword, "chap-password", "", "CHAP password for initiator")
+	flag.StringVar(&c.CHAP.CHAPUserIn, "chap-username-in", "", "CHAP username for target(s)")
+	flag.StringVar(&c.CHAP.CHAPPasswordIn, "chap-password-in", "", "CHAP password for target(s)")
 	flag.Parse()
 }
 

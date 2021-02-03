@@ -124,18 +124,22 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 	}
 
 	if err := target.Create(); err != nil {
+		//todo: rollback, remove vol
 		return err
 	}
 
 	if err := target.AddLun(volPath); err != nil {
+		//todo: rollback, remove target , remove vol
 		return err
 	}
 
 	if err := target.SetACL(lun.AclIpList); err != nil {
+		//todo: rollback, remove target , remove vol
 		return err
 	}
 
 	if err := target.AddCHAP(t.chap); err != nil {
+		//todo: rollback, remove target , remove vol
 		return err
 	}
 

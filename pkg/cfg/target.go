@@ -112,13 +112,45 @@ func (t *TargetCfg) SetACL(aclList []string) error {
 // eg. tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr --outgoing
 //     tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr
 func (t *TargetCfg) AddCHAP(chap *CHAP) error {
-	//if chap.CHAPUser == "" || chap.CHAPPassword == "" {
-	//	return errors.New("")
-	//}
-	//
-	//if chap.CHAPUserIn == "" || chap.CHAPPasswordIn == "" {
-	//	return errors.New("")
-	//}
+	var stdout, stderr bytes.Buffer
+
+	if chap.CHAPUser != "" && chap.CHAPPassword != "" {
+		cmd := exec.Command("/bin/sh", "-c",
+			fmt.Sprintf("%s --lld iscsi --op bind --mode account --tid %s --user %s ",
+				t.TargetToolCli, t.TargetId, chap.CHAPUser),
+		)
+		log.Info(cmd.String())
+
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+		}
+		log.Info(string(stdout.Bytes()))
+	} else if chap.CHAPUser == "" && chap.CHAPPassword == "" {
+		log.Warningf("both chap username and chap password are empty, imply disable chap")
+	} else {
+		return errors.New("CHAP username or password is empty")
+	}
+
+	if chap.CHAPUserIn != "" && chap.CHAPPasswordIn != "" {
+		cmd := exec.Command("/bin/sh", "-c",
+			fmt.Sprintf("%s --lld iscsi --op bind --mode account --tid %s --user %s --outgoing",
+				t.TargetToolCli, t.TargetId, chap.CHAPUserIn),
+		)
+		log.Info(cmd.String())
+
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+		if err := cmd.Run(); err != nil {
+			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
+		}
+		log.Info(string(stdout.Bytes()))
+	} else if chap.CHAPUserIn == "" && chap.CHAPPasswordIn == "" {
+		log.Warningf("both chap username_in and chap password_in are empty, imply disable chap")
+	} else {
+		return errors.New("CHAP username_in or password_in is empty")
+	}
 
 	return nil
 }

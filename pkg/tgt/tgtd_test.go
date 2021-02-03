@@ -21,6 +21,7 @@ func init() {
 		tgtimgCmd:     TGTIMG,
 		tgtadmCmd:     TGTADM,
 		targetConf:    "/tmp/iscsi-target-api.conf",
+		chap:          &cfg.CHAP{},
 	}
 	lvm.Initialize()
 }
