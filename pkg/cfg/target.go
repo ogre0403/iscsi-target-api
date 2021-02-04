@@ -22,10 +22,9 @@ func (t *TargetCfg) Create() error {
 	cmd := exec.Command("/bin/sh", "-c",
 		fmt.Sprintf("%s --lld iscsi --op new --mode target --tid %s -T %s ", t.TargetToolCli, t.TargetId, t.TargetIQN),
 	)
-	log.Info(cmd.String())
-
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
@@ -43,7 +42,7 @@ func (t *TargetCfg) Delete() error {
 	)
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
@@ -60,10 +59,9 @@ func (t *TargetCfg) AddLun(volPath string) error {
 	cmd := exec.Command("/bin/sh", "-c",
 		fmt.Sprintf("%s --lld iscsi --op new --mode logicalunit --tid %s --lun 1 -b %s ", t.TargetToolCli, t.TargetId, volPath),
 	)
-	log.Info(cmd.String())
-
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
@@ -81,10 +79,9 @@ func (t *TargetCfg) SetACL(aclList []string) error {
 		cmd := exec.Command("/bin/sh", "-c",
 			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %s -I %s ", t.TargetToolCli, t.TargetId, "ALL"),
 		)
-		log.Info(cmd.String())
-
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
+		log.V(3).Info(cmd.String())
 		if err := cmd.Run(); err != nil {
 			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 		}
@@ -96,10 +93,9 @@ func (t *TargetCfg) SetACL(aclList []string) error {
 		cmd := exec.Command("/bin/sh", "-c",
 			fmt.Sprintf("%s --lld iscsi --op bind --mode target --tid %s -I %s ", t.TargetToolCli, t.TargetId, ip),
 		)
-		log.Info(cmd.String())
-
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
+		log.V(3).Info(cmd.String())
 		if err := cmd.Run(); err != nil {
 			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 		}
@@ -119,10 +115,9 @@ func (t *TargetCfg) AddCHAP(chap *CHAP) error {
 			fmt.Sprintf("%s --lld iscsi --op bind --mode account --tid %s --user %s ",
 				t.TargetToolCli, t.TargetId, chap.CHAPUser),
 		)
-		log.Info(cmd.String())
-
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
+		log.V(3).Info(cmd.String())
 		if err := cmd.Run(); err != nil {
 			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 		}
@@ -138,10 +133,9 @@ func (t *TargetCfg) AddCHAP(chap *CHAP) error {
 			fmt.Sprintf("%s --lld iscsi --op bind --mode account --tid %s --user %s --outgoing",
 				t.TargetToolCli, t.TargetId, chap.CHAPUserIn),
 		)
-		log.Info(cmd.String())
-
 		cmd.Stdout = &stdout
 		cmd.Stderr = &stderr
+		log.V(3).Info(cmd.String())
 		if err := cmd.Run(); err != nil {
 			return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 		}

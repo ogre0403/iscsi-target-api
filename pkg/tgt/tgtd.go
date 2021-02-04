@@ -64,6 +64,7 @@ func isCmdExist(t *tgtd) (bool, error) {
 	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGT_ADMIN)
 	cmd.Stdout = &stdout
 
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return false, errors.New(fmt.Sprintf("%s not found", TGT_ADMIN))
 	}
@@ -72,6 +73,7 @@ func isCmdExist(t *tgtd) (bool, error) {
 	var stdout1 bytes.Buffer
 	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTIMG)
 	cmd.Stdout = &stdout1
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return false, errors.New(fmt.Sprintf("%s not found", TGTIMG))
 	}
@@ -80,6 +82,7 @@ func isCmdExist(t *tgtd) (bool, error) {
 	var stdout2 bytes.Buffer
 	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTADM)
 	cmd.Stdout = &stdout2
+	log.V(3).Info(cmd.String())
 	if err := cmd.Run(); err != nil {
 		return false, errors.New(fmt.Sprintf("%s not found", TGTADM))
 	}
@@ -136,14 +139,14 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 
 	if err := target.SetACL(lun.AclIpList); err != nil {
 		log.Infof("target %s create fail because ACL can not be added, rollback target creation",
-			target.TargetIQN, lun.AclIpList)
+			target.TargetIQN)
 		t.DeleteTarget(&target)
 		return err
 	}
 
 	if err := target.AddCHAP(t.chap); err != nil {
 		log.Infof("target %s create fail because CHAP can not be added, rollback target creation",
-			target.TargetIQN, volPath)
+			target.TargetIQN)
 		t.DeleteTarget(&target)
 		return err
 	}
@@ -174,17 +177,28 @@ func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
 func (t *tgtd) Save() error {
 	var stdout, stderr bytes.Buffer
 
+	// tgt-admin --dump | \
+	// sed -r \
+	// -e 's/(incominguser.*)(PLEASE_CORRECT_THE_PASSWORD)/\1CXC/g' \
+	// -e 's/(outgoinguser.*)(PLEASE_CORRECT_THE_PASSWORD)/\1Cxxx/g' \
+	// > /etc/tgt/conf.d/iscsi-target-api.conf
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --dump > %s ", t.tgt_adminCmd, t.targetConf),
+		fmt.Sprintf("%s --dump |"+
+			" sed -r "+
+			" -e 's/(incominguser.*)(PLEASE_CORRECT_THE_PASSWORD)/\\1%s/g' "+
+			" -e 's/(outgoinguser.*)(PLEASE_CORRECT_THE_PASSWORD)/\\1%s/g' "+
+			" > %s ",
+			t.tgt_adminCmd, t.chap.CHAPPassword, t.chap.CHAPPasswordIn, t.targetConf),
 	)
+
+	log.V(3).Info(cmd.String())
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
-
-	//todo: replace CAHP password
 
 	return nil
 }

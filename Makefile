@@ -45,7 +45,7 @@ run-in-docker:
 	-v /sys/kernel/config:/sys/kernel/config -v /run/lvm:/run/lvm -v /lib/modules:/lib/modules \
 	-p 8811:8811 \
 	${DOCKER_REPO}/${PROJ_NAME}:$(TAG) \
-	/iscsi-target-api -v=2 --logtostderr=true \
+	/iscsi-target-api -v=3 --logtostderr=true \
 	--manager-type=tgtd --volume-image-path=/var/lib/iscsi \
 	--api-username=admin --api-password=password \
 	--thin-pool-name=pool0

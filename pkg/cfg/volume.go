@@ -135,6 +135,8 @@ func (v *VolumeCfg) tgtimgProvision() error {
 	cmd := exec.Command("/bin/sh", "-c",
 		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s %s --file %s ", v.tgtimgCmd, sizeUnit, thin, fullImgPath),
 	)
+
+	log.V(3).Info(cmd.String())
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
