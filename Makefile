@@ -48,6 +48,8 @@ run-in-docker:
 	/iscsi-target-api -v=3 --logtostderr=true \
 	--manager-type=tgtd --volume-image-path=/var/lib/iscsi \
 	--api-username=admin --api-password=password \
+	--chap-username=abc --chap-password=abc \
+	--chap-username-in=xyz --chap-password-in=xyz \
 	--thin-pool-name=pool0
 
 

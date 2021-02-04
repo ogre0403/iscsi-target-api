@@ -141,7 +141,8 @@ $ make run-in-docker
           "group": "test",
           "name": "test.img"
       },
-      "aclList": ["192.168.1.0/24"]
+      "aclList": ["192.168.1.0/24"],
+      "enableCHAP": false
     }
     ```
 
@@ -150,14 +151,13 @@ $ make run-in-docker
 * One LUN per Target, volume is added at LUN `1`.
 
 ## TODO
-
-* Support iSCSI ACL
-    * CHAP
-    * ~~Initiator IP~~
-* ~~add API Authorization~~
 * One target has multiple LUNs
     * One target represent on namespace, one LUN represent one PV . 
 * Support `iscsitarget` manage tool
+* ~~Support iSCSI ACL~~
+    * ~~CHAP~~
+    * ~~Initiator IP~~
+* ~~add API Authorization~~
 * ~~Support LVM~~ 
 * ~~Support volume thin provision~~ 
 

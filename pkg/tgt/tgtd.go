@@ -144,11 +144,13 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 		return err
 	}
 
-	if err := target.AddCHAP(t.chap); err != nil {
-		log.Infof("target %s create fail because CHAP can not be added, rollback target creation",
-			target.TargetIQN)
-		t.DeleteTarget(&target)
-		return err
+	if lun.EnableChap {
+		if err := target.AddCHAP(t.chap); err != nil {
+			log.Infof("target %s create fail because CHAP can not be added, rollback target creation",
+				target.TargetIQN)
+			t.DeleteTarget(&target)
+			return err
+		}
 	}
 
 	return nil
