@@ -124,22 +124,27 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 	}
 
 	if err := target.Create(); err != nil {
-		//todo: rollback, remove vol
 		return err
 	}
 
 	if err := target.AddLun(volPath); err != nil {
-		//todo: rollback, remove target , remove vol
+		log.Infof("target %s create fail because LUN %s can not be added, rollback target creation",
+			target.TargetIQN, volPath)
+		t.DeleteTarget(&target)
 		return err
 	}
 
 	if err := target.SetACL(lun.AclIpList); err != nil {
-		//todo: rollback, remove target , remove vol
+		log.Infof("target %s create fail because ACL can not be added, rollback target creation",
+			target.TargetIQN, lun.AclIpList)
+		t.DeleteTarget(&target)
 		return err
 	}
 
 	if err := target.AddCHAP(t.chap); err != nil {
-		//todo: rollback, remove target , remove vol
+		log.Infof("target %s create fail because CHAP can not be added, rollback target creation",
+			target.TargetIQN, volPath)
+		t.DeleteTarget(&target)
 		return err
 	}
 
@@ -178,6 +183,9 @@ func (t *tgtd) Save() error {
 	if err := cmd.Run(); err != nil {
 		return errors.New(fmt.Sprintf(string(stderr.Bytes())))
 	}
+
+	//todo: replace CAHP password
+
 	return nil
 }
 
