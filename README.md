@@ -190,4 +190,13 @@ $ make run-in-docker
   
     # remove ACL 
     $ tgtadm --lld iscsi --op unbind --mode target --tid 1 -I 192.168.1.1
+  
+    # setup CHAP
+    $ tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr --outgoing
+    $ tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr
+    
+    # remove CHAP
+    $ tgtadm --lld iscsi --op unbind --mode account --tid 1 --user benjr --outgoing
+    $ tgtadm --lld iscsi --op unbind --mode account --tid 1 --user benjr
+    
     ```
