@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net"
 	"net/http"
 	"os/exec"
@@ -91,7 +92,7 @@ func isCmdExist(t *tgtd) (bool, error) {
 	return true, nil
 }
 
-func (t *tgtd) CreateVolume(cfg *cfg.VolumeCfg) error {
+func (t *tgtd) CreateVolume(cfg *volume.Volume) error {
 	t.setupVol(cfg)
 	return cfg.Create()
 }
@@ -171,7 +172,7 @@ func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
 	return tar.Delete()
 }
 
-func (t *tgtd) DeleteVolume(cfg *cfg.VolumeCfg) error {
+func (t *tgtd) DeleteVolume(cfg *volume.Volume) error {
 	t.setupVol(cfg)
 	return cfg.Delete()
 }
@@ -213,7 +214,7 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
 
-	var req cfg.VolumeCfg
+	var req volume.Volume
 	err := c.BindJSON(&req)
 
 	if err != nil {
@@ -266,7 +267,7 @@ func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
 
-	var req cfg.VolumeCfg
+	var req volume.Volume
 	err := c.BindJSON(&req)
 
 	if err != nil {
@@ -311,7 +312,7 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 	responseWithOk(c)
 }
 
-func (t *tgtd) setupVol(v *cfg.VolumeCfg) {
+func (t *tgtd) setupVol(v *volume.Volume) {
 	v.SetBaseImgPath(t.BaseImagePath)
 	v.SetTgtimgCmd(t.tgtimgCmd)
 }

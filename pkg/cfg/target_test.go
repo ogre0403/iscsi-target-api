@@ -2,12 +2,16 @@ package cfg
 
 import (
 	"github.com/ogre0403/go-lvm"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-var vol = VolumeCfg{
-	Type:  VolumeTypeTGTIMG,
+const ImgPath = "/var/lib/iscsi"
+const TgtimgCmd = "tgtimg"
+
+var vol = volume.Volume{
+	Type:  volume.VolumeTypeTGTIMG,
 	Group: "test",
 	Name:  "test1",
 	Size:  12,

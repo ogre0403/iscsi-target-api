@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 )
 
 const (
@@ -14,13 +15,13 @@ const (
 )
 
 type TargetManager interface {
-	CreateVolume(*cfg.VolumeCfg) error
+	CreateVolume(*volume.Volume) error
 	CreateVolumeAPI(*gin.Context)
 	AttachLun(*cfg.LunCfg) error
 	AttachLunAPI(*gin.Context)
 	DeleteTarget(*cfg.TargetCfg) error
 	DeleteTargetAPI(*gin.Context)
-	DeleteVolume(*cfg.VolumeCfg) error
+	DeleteVolume(*volume.Volume) error
 	DeleteVolumeAPI(*gin.Context)
 	Save() error
 }

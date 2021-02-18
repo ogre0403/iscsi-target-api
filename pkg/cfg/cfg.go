@@ -1,5 +1,7 @@
 package cfg
 
+import "github.com/ogre0403/iscsi-target-api/pkg/volume"
+
 // CHAP user must be create in advance
 type CHAP struct {
 	CHAPUser       string
@@ -17,10 +19,10 @@ type ManagerCfg struct {
 }
 
 type LunCfg struct {
-	TargetIQN  string     `json:"targetIQN"`
-	Volume     *VolumeCfg `json:"volume"`
-	AclIpList  []string   `json:"aclList"`
-	EnableChap bool       `json:"enableCHAP"`
+	TargetIQN  string         `json:"targetIQN"`
+	Volume     *volume.Volume `json:"volume"`
+	AclIpList  []string       `json:"aclList"`
+	EnableChap bool           `json:"enableCHAP"`
 }
 
 type Response struct {

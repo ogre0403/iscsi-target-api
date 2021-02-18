@@ -1,4 +1,4 @@
-package cfg
+package volume
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ const (
 	VolumeTypeTGTIMG = "tgtimg"
 )
 
-type VolumeCfg struct {
+type Volume struct {
 	Group         string `json:"group"`
 	Size          uint64 `json:"size"`
 	Unit          string `json:"unit"`
@@ -30,15 +30,15 @@ type VolumeCfg struct {
 	tgtimgCmd     string
 }
 
-func (v *VolumeCfg) SetBaseImgPath(path string) {
+func (v *Volume) SetBaseImgPath(path string) {
 	v.baseImagePath = path
 }
 
-func (v *VolumeCfg) SetTgtimgCmd(cmd string) {
+func (v *Volume) SetTgtimgCmd(cmd string) {
 	v.tgtimgCmd = cmd
 }
 
-func (v *VolumeCfg) Create() error {
+func (v *Volume) Create() error {
 
 	switch v.Type {
 	case VolumeTypeTGTIMG:
@@ -53,7 +53,7 @@ func (v *VolumeCfg) Create() error {
 	}
 }
 
-func (v *VolumeCfg) deletePrecheck() error {
+func (v *Volume) deletePrecheck() error {
 	if v.Group == "" {
 		return errors.New("volume group name is not defined")
 	}
@@ -65,7 +65,7 @@ func (v *VolumeCfg) deletePrecheck() error {
 	return nil
 }
 
-func (v *VolumeCfg) provisionPrecheck() error {
+func (v *Volume) provisionPrecheck() error {
 
 	if err := v.deletePrecheck(); err != nil {
 		return err
@@ -84,7 +84,7 @@ func (v *VolumeCfg) provisionPrecheck() error {
 
 }
 
-func (v *VolumeCfg) lvmProvision() error {
+func (v *Volume) lvmProvision() error {
 
 	if err := v.provisionPrecheck(); err != nil {
 		return err
@@ -103,7 +103,7 @@ func (v *VolumeCfg) lvmProvision() error {
 	}
 }
 
-func (v *VolumeCfg) tgtimgProvision() error {
+func (v *Volume) tgtimgProvision() error {
 
 	if err := v.provisionPrecheck(); err != nil {
 		return err
@@ -147,7 +147,7 @@ func (v *VolumeCfg) tgtimgProvision() error {
 	return nil
 }
 
-func (v *VolumeCfg) Delete() error {
+func (v *Volume) Delete() error {
 	switch v.Type {
 	case VolumeTypeTGTIMG:
 		log.V(2).Infof("Delete volume by %s ", VolumeTypeTGTIMG)
@@ -161,7 +161,7 @@ func (v *VolumeCfg) Delete() error {
 	}
 }
 
-func (v *VolumeCfg) tgtimgDelete() error {
+func (v *Volume) tgtimgDelete() error {
 
 	if err := v.deletePrecheck(); err != nil {
 		return err
@@ -183,14 +183,14 @@ func (v *VolumeCfg) tgtimgDelete() error {
 
 }
 
-func (v *VolumeCfg) lvmDelete() error {
+func (v *Volume) lvmDelete() error {
 	if err := v.deletePrecheck(); err != nil {
 		return err
 	}
 	return lvm.BD_LVM_LvRemove(v.Group, v.Name)
 }
 
-func (v *VolumeCfg) Path() (string, error) {
+func (v *Volume) Path() (string, error) {
 
 	switch v.Type {
 	case VolumeTypeTGTIMG:
@@ -204,7 +204,7 @@ func (v *VolumeCfg) Path() (string, error) {
 
 }
 
-func (v *VolumeCfg) IsExist() (bool, error) {
+func (v *Volume) IsExist() (bool, error) {
 	p, err := v.Path()
 	if err != nil {
 		return false, err
@@ -231,6 +231,6 @@ func isDirEmpty(name string) (bool, error) {
 }
 
 // todo: support LVM resize
-func (v *VolumeCfg) lvmResize() error {
+func (v *Volume) lvmResize() error {
 	return errors.New("not implemented error")
 }

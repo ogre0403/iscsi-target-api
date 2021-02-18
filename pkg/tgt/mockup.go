@@ -3,6 +3,7 @@ package tgt
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 )
 
 type mockupTarget struct {
@@ -20,7 +21,7 @@ func newMockupTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 	return t, nil
 }
 
-func (t *mockupTarget) CreateVolume(v *cfg.VolumeCfg) error {
+func (t *mockupTarget) CreateVolume(v *volume.Volume) error {
 	return nil
 }
 
@@ -31,7 +32,7 @@ func (t *mockupTarget) DeleteTarget(target *cfg.TargetCfg) error {
 	return nil
 }
 
-func (t *mockupTarget) DeleteVolume(v *cfg.VolumeCfg) error {
+func (t *mockupTarget) DeleteVolume(v *volume.Volume) error {
 	return nil
 }
 

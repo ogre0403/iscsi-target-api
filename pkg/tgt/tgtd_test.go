@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -39,7 +40,7 @@ func TestNewTarget(t *testing.T) {
 
 func TestTgtd_CreateVolume(t *testing.T) {
 
-	vc := &cfg.VolumeCfg{
+	vc := &volume.Volume{
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",
@@ -57,7 +58,7 @@ func TestTgtd_CreateVolume(t *testing.T) {
 }
 
 func TestTgtd_CreateVolumeWrongType(t *testing.T) {
-	lvmv := &cfg.VolumeCfg{
+	lvmv := &volume.Volume{
 		Type:  "aa",
 		Name:  "test.img",
 		Group: "vg-0",
@@ -70,7 +71,7 @@ func TestTgtd_CreateVolumeWrongType(t *testing.T) {
 }
 
 func TestTgtd_CreateVolume_LVM(t *testing.T) {
-	lvmv := &cfg.VolumeCfg{
+	lvmv := &volume.Volume{
 		Type:  LVM,
 		Name:  "test",
 		Group: "vg-0",
@@ -88,7 +89,7 @@ func TestTgtd_CreateVolume_LVM(t *testing.T) {
 }
 
 func TestTgtd_AttachLun(t *testing.T) {
-	vc := &cfg.VolumeCfg{
+	vc := &volume.Volume{
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",
@@ -127,7 +128,7 @@ func TestTgtd_AttachLun(t *testing.T) {
 }
 
 func TestTgtd_AttachLVMLun(t *testing.T) {
-	vc := &cfg.VolumeCfg{
+	vc := &volume.Volume{
 		Type:  LVM,
 		Name:  "test",
 		Group: "vg-0",
@@ -166,7 +167,7 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 }
 
 func TestTgtd_Reload(t *testing.T) {
-	vc := &cfg.VolumeCfg{
+	vc := &volume.Volume{
 		Type:  TGTIMG,
 		Name:  "test.img",
 		Group: "p",

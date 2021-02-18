@@ -1,4 +1,4 @@
-package cfg
+package volume
 
 import (
 	"errors"
@@ -8,13 +8,13 @@ import (
 	"testing"
 )
 
-var wrongVol = VolumeCfg{
+var wrongVol = Volume{
 	Type:  "test",
 	Group: "test",
 	Name:  "test",
 }
 
-var LVMVol = VolumeCfg{
+var LVMVol = Volume{
 	Type:  VolumeTypeLVM,
 	Group: "vg-0",
 	Name:  "test",
@@ -22,7 +22,7 @@ var LVMVol = VolumeCfg{
 	Unit:  lvm.MiB,
 }
 
-var TgtimgVol = VolumeCfg{
+var TgtimgVol = Volume{
 	Type:  VolumeTypeTGTIMG,
 	Group: "test",
 	Name:  "test",
