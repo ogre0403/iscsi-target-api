@@ -92,20 +92,24 @@ func isCmdExist(t *tgtd) (bool, error) {
 	return true, nil
 }
 
-func (t *tgtd) CreateVolume(cfg *volume.Volume) error {
-	t.setupVol(cfg)
+func (t *tgtd) CreateVolume(cfg volume.Volume) error {
+	//t.setupVol(cfg)
 	return cfg.Create()
 }
 
 func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 
-	t.setupVol(lun.Volume)
-	volPath, err := lun.Volume.Path()
+	actualVol, err := t.NewVolume(lun.Volume.Type, lun.Volume)
 	if err != nil {
 		return err
 	}
 
-	if _, err := lun.Volume.IsExist(); err != nil {
+	volPath, err := actualVol.Path()
+	if err != nil {
+		return err
+	}
+
+	if _, err := actualVol.IsExist(); err != nil {
 		return err
 	}
 
@@ -172,8 +176,8 @@ func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
 	return tar.Delete()
 }
 
-func (t *tgtd) DeleteVolume(cfg *volume.Volume) error {
-	t.setupVol(cfg)
+func (t *tgtd) DeleteVolume(cfg volume.Volume) error {
+	//t.setupVol(cfg)
 	return cfg.Delete()
 }
 
@@ -214,15 +218,20 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
 
-	var req volume.Volume
+	var req volume.BasicVolume
 	err := c.BindJSON(&req)
-
 	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
 		return
 	}
 
-	if err := t.CreateVolume(&req); err != nil {
+	actualVol, err := t.NewVolume(req.Type, &req)
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "create Volume fail: %s", err.Error())
+		return
+	}
+
+	if err := t.CreateVolume(actualVol); err != nil {
 		respondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
 		return
 	}
@@ -267,15 +276,21 @@ func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&t.locker, 0)
 
-	var req volume.Volume
+	var req volume.BasicVolume
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind VolumeCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
 		return
 	}
 
-	if err := t.DeleteVolume(&req); err != nil {
+	actualVol, err := t.NewVolume(req.Type, &req)
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "create Volume fail: %s", err.Error())
+		return
+	}
+
+	if err := t.DeleteVolume(actualVol); err != nil {
 		respondWithError(c, http.StatusInternalServerError, "Delete Volume fail: %s", err.Error())
 		return
 	}
@@ -312,9 +327,53 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 	responseWithOk(c)
 }
 
-func (t *tgtd) setupVol(v *volume.Volume) {
-	v.SetBaseImgPath(t.BaseImagePath)
-	v.SetTgtimgCmd(t.tgtimgCmd)
+//func (t *tgtd) setupVol(v volume.Volume) {
+
+//v.SetBaseImgPath(t.BaseImagePath)
+//v.SetTgtimgCmd(t.tgtimgCmd)
+//}
+
+//func (d *tgtd) BindVolume(t string, ctx *gin.Context) (volume.Volume, error) {
+//
+//	switch t {
+//	case volume.VolumeTypeLVM:
+//		log.Infof("bind %s volume", volume.VolumeTypeLVM)
+//		var v volume.LvmVolume
+//		err := ctx.BindJSON(&v)
+//		return &v, err
+//	case volume.VolumeTypeTGTIMG:
+//		log.Infof("bind %s volume", volume.VolumeTypeTGTIMG)
+//		var v volume.ImageVolume
+//		err := ctx.BindJSON(&v)
+//
+//		v.TgtimgCmd = d.tgtimgCmd
+//		v.BaseImagePath = d.BaseImagePath
+//		return &v, err
+//	default:
+//		log.Infof("%s is not supported volume type", t)
+//		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", t))
+//	}
+//}
+
+func (d *tgtd) NewVolume(t string, basic *volume.BasicVolume) (volume.Volume, error) {
+	switch t {
+	case volume.VolumeTypeLVM:
+		log.Infof("Initialize %s volume", volume.VolumeTypeLVM)
+		return &volume.LvmVolume{
+			BasicVolume: *basic,
+		}, nil
+	case volume.VolumeTypeTGTIMG:
+		log.Infof("Initialize %s volume", volume.VolumeTypeTGTIMG)
+
+		return &volume.ImageVolume{
+			BasicVolume:   *basic,
+			BaseImagePath: d.BaseImagePath,
+			TgtimgCmd:     d.tgtimgCmd,
+		}, nil
+	default:
+		log.Infof("%s is not supported volume type", t)
+		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", t))
+	}
 }
 
 func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {

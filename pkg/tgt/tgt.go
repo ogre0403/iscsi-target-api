@@ -15,13 +15,13 @@ const (
 )
 
 type TargetManager interface {
-	CreateVolume(*volume.Volume) error
+	CreateVolume(volume.Volume) error
 	CreateVolumeAPI(*gin.Context)
 	AttachLun(*cfg.LunCfg) error
 	AttachLunAPI(*gin.Context)
 	DeleteTarget(*cfg.TargetCfg) error
 	DeleteTargetAPI(*gin.Context)
-	DeleteVolume(*volume.Volume) error
+	DeleteVolume(volume.Volume) error
 	DeleteVolumeAPI(*gin.Context)
 	Save() error
 }

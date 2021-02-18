@@ -19,10 +19,10 @@ type ManagerCfg struct {
 }
 
 type LunCfg struct {
-	TargetIQN  string         `json:"targetIQN"`
-	Volume     *volume.Volume `json:"volume"`
-	AclIpList  []string       `json:"aclList"`
-	EnableChap bool           `json:"enableCHAP"`
+	TargetIQN  string              `json:"targetIQN"`
+	Volume     *volume.BasicVolume `json:"volume"`
+	AclIpList  []string            `json:"aclList"`
+	EnableChap bool                `json:"enableCHAP"`
 }
 
 type Response struct {
