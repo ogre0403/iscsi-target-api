@@ -19,10 +19,6 @@ var TgtimgVol = ImageVolume{
 	BaseImagePath: "/var/lib/iscsi",
 }
 
-func init() {
-	lvm.Initialize()
-}
-
 func TestImageVolume_Path(t *testing.T) {
 	p, err := TgtimgVol.Path()
 	assert.Equal(t, "/var/lib/iscsi/test/test", p)

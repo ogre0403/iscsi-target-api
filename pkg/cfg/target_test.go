@@ -7,15 +7,17 @@ import (
 	"testing"
 )
 
-const ImgPath = "/var/lib/iscsi"
-const TgtimgCmd = "tgtimg"
+var tgtimgVol = volume.ImageVolume{
+	BasicVolume: volume.BasicVolume{
+		Type:  volume.VolumeTypeTGTIMG,
+		Group: "test",
+		Name:  "test",
+		Size:  12,
+		Unit:  lvm.MiB,
+	},
 
-var vol = volume.Volume{
-	Type:  volume.VolumeTypeTGTIMG,
-	Group: "test",
-	Name:  "test1",
-	Size:  12,
-	Unit:  lvm.MiB,
+	TgtimgCmd:     "tgtimg",
+	BaseImagePath: "/var/lib/iscsi",
 }
 
 func TestTargetCfg_Create(t *testing.T) {
@@ -34,12 +36,10 @@ func TestTargetCfg_Create(t *testing.T) {
 
 func TestTargetCfg_AddLun(t *testing.T) {
 
-	vol.SetBaseImgPath(ImgPath)
-	vol.SetTgtimgCmd(TgtimgCmd)
-	e := vol.Create()
+	e := tgtimgVol.Create()
 	assert.NoError(t, e)
 
-	path, _ := vol.Path()
+	path, _ := tgtimgVol.Path()
 
 	target := TargetCfg{
 		TargetToolCli: "tgtadm",
@@ -50,7 +50,7 @@ func TestTargetCfg_AddLun(t *testing.T) {
 	e = target.AddLun(path)
 	assert.NoError(t, e)
 
-	vol.Delete()
+	tgtimgVol.Delete()
 }
 
 func TestTargetCfg_ACL(t *testing.T) {

@@ -29,7 +29,7 @@ type tgtd struct {
 	chap          *cfg.CHAP
 	locker        uint32
 	targetConf    string
-	BaseImagePath string
+	baseImagePath string
 	tgtimgCmd     string
 	tgt_adminCmd  string
 	tgtadmCmd     string
@@ -39,7 +39,7 @@ type tgtd struct {
 func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 
 	t := &tgtd{
-		BaseImagePath: mgrCfg.BaseImagePath,
+		baseImagePath: mgrCfg.BaseImagePath,
 		targetConf:    mgrCfg.TargetConf,
 		thinPool:      mgrCfg.ThinPool,
 	}
@@ -92,9 +92,8 @@ func isCmdExist(t *tgtd) (bool, error) {
 	return true, nil
 }
 
-func (t *tgtd) CreateVolume(cfg volume.Volume) error {
-	//t.setupVol(cfg)
-	return cfg.Create()
+func (t *tgtd) CreateVolume(vol volume.Volume) error {
+	return vol.Create()
 }
 
 func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
@@ -176,9 +175,8 @@ func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
 	return tar.Delete()
 }
 
-func (t *tgtd) DeleteVolume(cfg volume.Volume) error {
-	//t.setupVol(cfg)
-	return cfg.Delete()
+func (t *tgtd) DeleteVolume(vol volume.Volume) error {
+	return vol.Delete()
 }
 
 func (t *tgtd) Save() error {
@@ -327,36 +325,8 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 	responseWithOk(c)
 }
 
-//func (t *tgtd) setupVol(v volume.Volume) {
-
-//v.SetBaseImgPath(t.BaseImagePath)
-//v.SetTgtimgCmd(t.tgtimgCmd)
-//}
-
-//func (d *tgtd) BindVolume(t string, ctx *gin.Context) (volume.Volume, error) {
-//
-//	switch t {
-//	case volume.VolumeTypeLVM:
-//		log.Infof("bind %s volume", volume.VolumeTypeLVM)
-//		var v volume.LvmVolume
-//		err := ctx.BindJSON(&v)
-//		return &v, err
-//	case volume.VolumeTypeTGTIMG:
-//		log.Infof("bind %s volume", volume.VolumeTypeTGTIMG)
-//		var v volume.ImageVolume
-//		err := ctx.BindJSON(&v)
-//
-//		v.TgtimgCmd = d.tgtimgCmd
-//		v.BaseImagePath = d.BaseImagePath
-//		return &v, err
-//	default:
-//		log.Infof("%s is not supported volume type", t)
-//		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", t))
-//	}
-//}
-
-func (d *tgtd) NewVolume(t string, basic *volume.BasicVolume) (volume.Volume, error) {
-	switch t {
+func (t *tgtd) NewVolume(_type string, basic *volume.BasicVolume) (volume.Volume, error) {
+	switch _type {
 	case volume.VolumeTypeLVM:
 		log.Infof("Initialize %s volume", volume.VolumeTypeLVM)
 		return &volume.LvmVolume{
@@ -367,8 +337,8 @@ func (d *tgtd) NewVolume(t string, basic *volume.BasicVolume) (volume.Volume, er
 
 		return &volume.ImageVolume{
 			BasicVolume:   *basic,
-			BaseImagePath: d.BaseImagePath,
-			TgtimgCmd:     d.tgtimgCmd,
+			BaseImagePath: t.baseImagePath,
+			TgtimgCmd:     t.tgtimgCmd,
 		}, nil
 	default:
 		log.Infof("%s is not supported volume type", t)

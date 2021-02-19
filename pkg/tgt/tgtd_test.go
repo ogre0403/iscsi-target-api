@@ -17,7 +17,7 @@ var mgr tgtd
 func init() {
 
 	mgr = tgtd{
-		BaseImagePath: BASEIMGPATH,
+		baseImagePath: BASEIMGPATH,
 		tgt_adminCmd:  TGT_ADMIN,
 		tgtimgCmd:     TGTIMG,
 		tgtadmCmd:     TGTADM,
