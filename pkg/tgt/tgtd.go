@@ -4,30 +4,25 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net"
-	"net/http"
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync/atomic"
 )
 
 const (
 	TGT_ADMIN   = "tgt-admin"
 	TGTADM      = "tgtadm"
 	TGTIMG      = "tgtimg"
-	LVM         = "lvm"
 	TARGETCONF  = "/etc/tgt/conf.d/iscsi-target-api.conf"
 	BASEIMGPATH = "/var/lib/iscsi/"
 )
 
 type tgtd struct {
 	chap          *cfg.CHAP
-	locker        uint32
 	targetConf    string
 	baseImagePath string
 	tgtimgCmd     string
@@ -219,111 +214,6 @@ func (t *tgtd) Save() error {
 	return nil
 }
 
-func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
-
-	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
-		return
-	}
-	defer atomic.StoreUint32(&t.locker, 0)
-
-	var req volume.BasicVolume
-	err := c.BindJSON(&req)
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
-		return
-	}
-
-	if err := t.CreateVolume(&req); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
-		return
-	}
-
-	responseWithOk(c)
-}
-
-func (t *tgtd) AttachLunAPI(c *gin.Context) {
-
-	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
-		return
-	}
-	defer atomic.StoreUint32(&t.locker, 0)
-
-	var req cfg.LunCfg
-	err := c.BindJSON(&req)
-
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
-		return
-	}
-
-	if err := t.AttachLun(&req); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Attach LUN fail: %s", err.Error())
-		return
-	}
-
-	if err := t.Save(); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
-		return
-	}
-
-	responseWithOk(c)
-}
-
-func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
-
-	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
-		return
-	}
-	defer atomic.StoreUint32(&t.locker, 0)
-
-	var req volume.BasicVolume
-	err := c.BindJSON(&req)
-
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
-		return
-	}
-
-	if err := t.DeleteVolume(&req); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Delete Volume fail: %s", err.Error())
-		return
-	}
-
-	responseWithOk(c)
-}
-
-func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
-
-	if !atomic.CompareAndSwapUint32(&t.locker, 0, 1) {
-		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
-		return
-	}
-	defer atomic.StoreUint32(&t.locker, 0)
-
-	var req cfg.TargetCfg
-	err := c.BindJSON(&req)
-
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind TargetCfg fail: %s", err.Error())
-		return
-	}
-
-	if err := t.DeleteTarget(&req); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Delete Target fail: %s", err.Error())
-		return
-	}
-
-	if err := t.Save(); err != nil {
-		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
-		return
-	}
-
-	responseWithOk(c)
-}
-
 func (t *tgtd) NewVolume(basic *volume.BasicVolume) (volume.Volume, error) {
 	switch basic.Type {
 	case volume.VolumeTypeLVM:
@@ -344,21 +234,4 @@ func (t *tgtd) NewVolume(basic *volume.BasicVolume) (volume.Volume, error) {
 		log.Infof("%s is not supported volume type", basic.Type)
 		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", basic.Type))
 	}
-}
-
-func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
-	log.Errorf(format, args...)
-	resp := cfg.Response{
-		Error:   true,
-		Message: fmt.Sprintf(format, args...),
-	}
-	c.JSON(code, resp)
-	c.Abort()
-}
-
-func responseWithOk(c *gin.Context) {
-	c.JSON(http.StatusOK, cfg.Response{
-		Error:   false,
-		Message: "Successful",
-	})
 }

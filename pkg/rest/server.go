@@ -1,12 +1,16 @@
 package rest
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
+	"github.com/ogre0403/iscsi-target-api/pkg/volume"
+	"net/http"
 	"strconv"
+	"sync/atomic"
 )
 
 const (
@@ -20,6 +24,7 @@ type APIServer struct {
 	config    *cfg.ServerCfg
 	router    *gin.Engine
 	targetMgr *tgt.TargetManager
+	locker    uint32
 }
 
 func NewAPIServer(m tgt.TargetManager, conf *cfg.ServerCfg) *APIServer {
@@ -53,8 +58,130 @@ func addRoute(server *APIServer) {
 	authorized := server.router.Group("/", gin.BasicAuth(gin.Accounts{
 		server.config.Username: server.config.Password,
 	}))
-	authorized.POST(CreateVolumeEndpoint, (*server.targetMgr).CreateVolumeAPI)
-	authorized.POST(AttachLunEndpoint, (*server.targetMgr).AttachLunAPI)
-	authorized.DELETE(DeleteTargetEndpoint, (*server.targetMgr).DeleteTargetAPI)
-	authorized.DELETE(DeleteVolumeEndpoint, (*server.targetMgr).DeleteVolumeAPI)
+	authorized.POST(CreateVolumeEndpoint, server.CreateVolumeAPI)
+	authorized.POST(AttachLunEndpoint, server.AttachLunAPI)
+	authorized.DELETE(DeleteTargetEndpoint, server.DeleteTargetAPI)
+	authorized.DELETE(DeleteVolumeEndpoint, server.DeleteVolumeAPI)
+}
+
+func (s *APIServer) CreateVolumeAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&s.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&s.locker, 0)
+
+	var req volume.BasicVolume
+	err := c.BindJSON(&req)
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).CreateVolume(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
+}
+
+func (s *APIServer) AttachLunAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&s.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&s.locker, 0)
+
+	var req cfg.LunCfg
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).AttachLun(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Attach LUN fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).Save(); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
+}
+
+func (s *APIServer) DeleteVolumeAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&s.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&s.locker, 0)
+
+	var req volume.BasicVolume
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind BasicVolume fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).DeleteVolume(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Delete Volume fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
+}
+
+func (s *APIServer) DeleteTargetAPI(c *gin.Context) {
+
+	if !atomic.CompareAndSwapUint32(&s.locker, 0, 1) {
+		respondWithError(c, http.StatusTooManyRequests, "Another API is executing")
+		return
+	}
+	defer atomic.StoreUint32(&s.locker, 0)
+
+	var req cfg.TargetCfg
+	err := c.BindJSON(&req)
+
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, "Bind TargetCfg fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).DeleteTarget(&req); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Delete Target fail: %s", err.Error())
+		return
+	}
+
+	if err := (*s.targetMgr).Save(); err != nil {
+		respondWithError(c, http.StatusInternalServerError, "Save tgtd config file fail: %s", err.Error())
+		return
+	}
+
+	responseWithOk(c)
+}
+
+func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
+	log.Errorf(format, args...)
+	resp := cfg.Response{
+		Error:   true,
+		Message: fmt.Sprintf(format, args...),
+	}
+	c.JSON(code, resp)
+	c.Abort()
+}
+
+func responseWithOk(c *gin.Context) {
+	c.JSON(http.StatusOK, cfg.Response{
+		Error:   false,
+		Message: "Successful",
+	})
 }
