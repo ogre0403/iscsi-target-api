@@ -92,13 +92,19 @@ func isCmdExist(t *tgtd) (bool, error) {
 	return true, nil
 }
 
-func (t *tgtd) CreateVolume(vol volume.Volume) error {
-	return vol.Create()
+func (t *tgtd) CreateVolume(vol *volume.BasicVolume) error {
+
+	actualVol, err := t.NewVolume(vol)
+	if err != nil {
+		return err
+	}
+
+	return actualVol.Create()
 }
 
 func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 
-	actualVol, err := t.NewVolume(lun.Volume.Type, lun.Volume)
+	actualVol, err := t.NewVolume(lun.Volume)
 	if err != nil {
 		return err
 	}
@@ -175,8 +181,13 @@ func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
 	return tar.Delete()
 }
 
-func (t *tgtd) DeleteVolume(vol volume.Volume) error {
-	return vol.Delete()
+func (t *tgtd) DeleteVolume(vol *volume.BasicVolume) error {
+	actualVol, err := t.NewVolume(vol)
+	if err != nil {
+		return err
+	}
+
+	return actualVol.Delete()
 }
 
 func (t *tgtd) Save() error {
@@ -223,13 +234,7 @@ func (t *tgtd) CreateVolumeAPI(c *gin.Context) {
 		return
 	}
 
-	actualVol, err := t.NewVolume(req.Type, &req)
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "create Volume fail: %s", err.Error())
-		return
-	}
-
-	if err := t.CreateVolume(actualVol); err != nil {
+	if err := t.CreateVolume(&req); err != nil {
 		respondWithError(c, http.StatusInternalServerError, "Create Volume fail: %s", err.Error())
 		return
 	}
@@ -282,13 +287,7 @@ func (t *tgtd) DeleteVolumeAPI(c *gin.Context) {
 		return
 	}
 
-	actualVol, err := t.NewVolume(req.Type, &req)
-	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "create Volume fail: %s", err.Error())
-		return
-	}
-
-	if err := t.DeleteVolume(actualVol); err != nil {
+	if err := t.DeleteVolume(&req); err != nil {
 		respondWithError(c, http.StatusInternalServerError, "Delete Volume fail: %s", err.Error())
 		return
 	}
@@ -325,12 +324,13 @@ func (t *tgtd) DeleteTargetAPI(c *gin.Context) {
 	responseWithOk(c)
 }
 
-func (t *tgtd) NewVolume(_type string, basic *volume.BasicVolume) (volume.Volume, error) {
-	switch _type {
+func (t *tgtd) NewVolume(basic *volume.BasicVolume) (volume.Volume, error) {
+	switch basic.Type {
 	case volume.VolumeTypeLVM:
 		log.Infof("Initialize %s volume", volume.VolumeTypeLVM)
 		return &volume.LvmVolume{
 			BasicVolume: *basic,
+			ThinPool:    t.thinPool,
 		}, nil
 	case volume.VolumeTypeTGTIMG:
 		log.Infof("Initialize %s volume", volume.VolumeTypeTGTIMG)
@@ -341,8 +341,8 @@ func (t *tgtd) NewVolume(_type string, basic *volume.BasicVolume) (volume.Volume
 			TgtimgCmd:     t.tgtimgCmd,
 		}, nil
 	default:
-		log.Infof("%s is not supported volume type", t)
-		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", t))
+		log.Infof("%s is not supported volume type", basic.Type)
+		return nil, errors.New(fmt.Sprintf("%s is not supported volume type", basic.Type))
 	}
 }
 

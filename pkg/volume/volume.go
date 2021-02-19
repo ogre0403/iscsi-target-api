@@ -41,8 +41,12 @@ func (v *BasicVolume) deletePreCheck() error {
 
 func (v *BasicVolume) provisionPreCheck() error {
 
-	if err := v.deletePreCheck(); err != nil {
-		return err
+	if v.Group == "" {
+		return errors.New("volume group name is not defined")
+	}
+
+	if v.Name == "" {
+		return errors.New("logical volume name is not defined")
 	}
 
 	if v.Size == 0 {

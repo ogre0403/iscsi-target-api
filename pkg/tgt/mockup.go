@@ -21,7 +21,7 @@ func newMockupTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 	return t, nil
 }
 
-func (t *mockupTarget) CreateVolume(v volume.Volume) error {
+func (t *mockupTarget) CreateVolume(v *volume.BasicVolume) error {
 	return nil
 }
 
@@ -32,7 +32,7 @@ func (t *mockupTarget) DeleteTarget(target *cfg.TargetCfg) error {
 	return nil
 }
 
-func (t *mockupTarget) DeleteVolume(v volume.Volume) error {
+func (t *mockupTarget) DeleteVolume(v *volume.BasicVolume) error {
 	return nil
 }
 

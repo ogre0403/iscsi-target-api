@@ -23,6 +23,7 @@ func init() {
 		tgtadmCmd:     TGTADM,
 		targetConf:    "/tmp/iscsi-target-api.conf",
 		chap:          &cfg.CHAP{},
+		thinPool:      "pool0",
 	}
 	lvm.Initialize()
 }
@@ -38,75 +39,42 @@ func TestNewTarget(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestTgtd_CreateVolume(t *testing.T) {
+func TestTgtd_NewVolume(t *testing.T) {
 
-	vc := &volume.Volume{
-		Type:  TGTIMG,
-		Name:  "test.img",
-		Group: "p",
-		Size:  100,
-		Unit:  lvm.MiB,
+	bv := volume.BasicVolume{
+		Type:          volume.VolumeTypeTGTIMG,
+		Group:         "test",
+		Name:          "test",
+		Size:          12,
+		Unit:          lvm.MiB,
+		ThinProvision: false,
 	}
-	err := mgr.CreateVolume(vc)
+
+	_, err := mgr.NewVolume(&bv)
+
 	assert.NoError(t, err)
-
-	t.Cleanup(func() {
-		err := mgr.DeleteVolume(vc)
-		assert.NoError(t, err)
-	})
-
-}
-
-func TestTgtd_CreateVolumeWrongType(t *testing.T) {
-	lvmv := &volume.Volume{
-		Type:  "aa",
-		Name:  "test.img",
-		Group: "vg-0",
-		Size:  100,
-		Unit:  lvm.MiB,
-	}
-
-	err := mgr.CreateVolume(lvmv)
-	assert.Error(t, err)
-}
-
-func TestTgtd_CreateVolume_LVM(t *testing.T) {
-	lvmv := &volume.Volume{
-		Type:  LVM,
-		Name:  "test",
-		Group: "vg-0",
-		Size:  100,
-		Unit:  lvm.MiB,
-	}
-
-	err := mgr.CreateVolume(lvmv)
-	assert.NoError(t, err)
-
-	t.Cleanup(func() {
-		err := mgr.DeleteVolume(lvmv)
-		assert.NoError(t, err)
-	})
 }
 
 func TestTgtd_AttachLun(t *testing.T) {
-	vc := &volume.Volume{
-		Type:  TGTIMG,
-		Name:  "test.img",
-		Group: "p",
-		Size:  100,
-		Unit:  lvm.MiB,
+	bv := volume.BasicVolume{
+		Type:          volume.VolumeTypeTGTIMG,
+		Group:         "test",
+		Name:          "test",
+		Size:          20,
+		Unit:          lvm.MiB,
+		ThinProvision: false,
 	}
 
 	lc := &cfg.LunCfg{
 		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
-		Volume:    vc,
+		Volume:    &bv,
 	}
 
-	err := mgr.CreateVolume(vc)
+	err := mgr.CreateVolume(&bv)
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
-		mgr.DeleteVolume(vc)
+		mgr.DeleteVolume(&bv)
 	})
 
 	err = mgr.AttachLun(lc)
@@ -123,29 +91,37 @@ func TestTgtd_AttachLun(t *testing.T) {
 		}
 		err := mgr.DeleteTarget(cfg)
 		assert.NoError(t, err)
+	})
+
+	err = mgr.Save()
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		os.Remove(mgr.targetConf)
 	})
 
 }
 
 func TestTgtd_AttachLVMLun(t *testing.T) {
-	vc := &volume.Volume{
-		Type:  LVM,
-		Name:  "test",
-		Group: "vg-0",
-		Size:  100,
-		Unit:  lvm.MiB,
+	bv := volume.BasicVolume{
+		Type:          volume.VolumeTypeLVM,
+		Group:         "vg-0",
+		Name:          "test",
+		Size:          20,
+		Unit:          lvm.MiB,
+		ThinProvision: false,
 	}
 
 	lc := &cfg.LunCfg{
 		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
-		Volume:    vc,
+		Volume:    &bv,
 	}
 
-	err := mgr.CreateVolume(vc)
+	err := mgr.CreateVolume(&bv)
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {
-		mgr.DeleteVolume(vc)
+		mgr.DeleteVolume(&bv)
 	})
 
 	err = mgr.AttachLun(lc)
@@ -155,40 +131,6 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 	if assert.Error(t, err) {
 		assert.Equal(t, errors.New(fmt.Sprintf("target %s already exist", lc.TargetIQN)), err)
 	}
-
-	t.Cleanup(func() {
-		cfg := &cfg.TargetCfg{
-			TargetIQN: lc.TargetIQN,
-		}
-		err := mgr.DeleteTarget(cfg)
-		assert.NoError(t, err)
-	})
-
-}
-
-func TestTgtd_Reload(t *testing.T) {
-	vc := &volume.Volume{
-		Type:  TGTIMG,
-		Name:  "test.img",
-		Group: "p",
-		Size:  100,
-		Unit:  lvm.MiB,
-	}
-
-	lc := &cfg.LunCfg{
-		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
-		Volume:    vc,
-	}
-
-	err := mgr.CreateVolume(vc)
-	assert.NoError(t, err)
-
-	t.Cleanup(func() {
-		mgr.DeleteVolume(vc)
-	})
-
-	err = mgr.AttachLun(lc)
-	assert.NoError(t, err)
 
 	t.Cleanup(func() {
 		cfg := &cfg.TargetCfg{
