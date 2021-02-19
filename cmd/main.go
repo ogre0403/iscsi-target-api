@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	log "github.com/golang/glog"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"github.com/ogre0403/iscsi-target-api/pkg/rest"
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 )
@@ -11,10 +11,10 @@ import (
 var (
 	commitID  = "%COMMITID%"
 	buildTime = "%BUILDID%"
-	c         = &cfg.ManagerCfg{
-		CHAP: &cfg.CHAP{},
+	c         = &model.ManagerCfg{
+		CHAP: &model.CHAP{},
 	}
-	sc                = &cfg.ServerCfg{}
+	sc                = &model.ServerCfg{}
 	port              int
 	targetManagerType string
 )

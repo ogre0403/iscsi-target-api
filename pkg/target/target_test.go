@@ -1,7 +1,8 @@
-package cfg
+package target
 
 import (
 	"github.com/ogre0403/go-lvm"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -22,7 +23,7 @@ var tgtimgVol = volume.ImageVolume{
 
 func TestTargetCfg_Create(t *testing.T) {
 
-	target := TargetCfg{
+	target := Target{
 		TargetToolCli: "tgtadm",
 		TargetId:      "99",
 		TargetIQN:     "iqn.test.com.local:local",
@@ -41,7 +42,7 @@ func TestTargetCfg_AddLun(t *testing.T) {
 
 	path, _ := tgtimgVol.Path()
 
-	target := TargetCfg{
+	target := Target{
 		TargetToolCli: "tgtadm",
 		TargetId:      "99",
 		TargetIQN:     "iqn.test.com.local:local",
@@ -54,7 +55,7 @@ func TestTargetCfg_AddLun(t *testing.T) {
 }
 
 func TestTargetCfg_ACL(t *testing.T) {
-	target := TargetCfg{
+	target := Target{
 		TargetToolCli: "tgtadm",
 		TargetId:      "99",
 		TargetIQN:     "iqn.test.com.local:local",
@@ -68,16 +69,16 @@ func TestTargetCfg_ACL(t *testing.T) {
 }
 
 func TestTargetCfg_AddCHAP(t *testing.T) {
-	target := TargetCfg{
+	target := Target{
 		TargetToolCli: "tgtadm",
 		TargetId:      "99",
 		TargetIQN:     "iqn.test.com.local:local",
 	}
 
-	e := target.AddCHAP(&CHAP{})
+	e := target.AddCHAP(&model.CHAP{})
 	assert.NoError(t, e)
 
-	e = target.AddCHAP(&CHAP{
+	e = target.AddCHAP(&model.CHAP{
 		CHAPUser:     "abca",
 		CHAPPassword: "abca",
 	})
@@ -86,7 +87,7 @@ func TestTargetCfg_AddCHAP(t *testing.T) {
 }
 
 func TestTargetCfg_Delete(t *testing.T) {
-	target := TargetCfg{
+	target := Target{
 		TargetToolCli: "tgt-admin",
 		TargetId:      "99",
 		TargetIQN:     "iqn.test.com.local:local",

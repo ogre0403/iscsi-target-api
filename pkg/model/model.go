@@ -1,4 +1,4 @@
-package cfg
+package model
 
 import "github.com/ogre0403/iscsi-target-api/pkg/volume"
 
@@ -18,7 +18,7 @@ type ManagerCfg struct {
 	ThinPool       string
 }
 
-type LunCfg struct {
+type Lun struct {
 	TargetIQN  string              `json:"targetIQN"`
 	Volume     *volume.BasicVolume `json:"volume"`
 	AclIpList  []string            `json:"aclList"`

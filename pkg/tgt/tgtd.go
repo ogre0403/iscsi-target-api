@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/golang/glog"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
+	"github.com/ogre0403/iscsi-target-api/pkg/target"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net"
 	"os/exec"
@@ -22,7 +23,7 @@ const (
 )
 
 type tgtd struct {
-	chap          *cfg.CHAP
+	chap          *model.CHAP
 	targetConf    string
 	baseImagePath string
 	tgtimgCmd     string
@@ -31,7 +32,7 @@ type tgtd struct {
 	thinPool      string
 }
 
-func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
+func newTgtdTarget(mgrCfg *model.ManagerCfg) (TargetManager, error) {
 
 	t := &tgtd{
 		baseImagePath: mgrCfg.BaseImagePath,
@@ -92,7 +93,7 @@ func (t *tgtd) CreateVolume(vol *volume.BasicVolume) error {
 	return actualVol.Create()
 }
 
-func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
+func (t *tgtd) AttachLun(lun *model.Lun) error {
 
 	actualVol, err := t.NewVolume(lun.Volume)
 	if err != nil {
@@ -120,7 +121,7 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 	}
 
 	tid := queryMaxTargetId()
-	target := cfg.TargetCfg{
+	target := target.Target{
 		TargetToolCli: t.tgtadmCmd,
 		TargetId:      strconv.Itoa(tid + 1),
 		TargetIQN:     lun.TargetIQN,
@@ -156,17 +157,17 @@ func (t *tgtd) AttachLun(lun *cfg.LunCfg) error {
 	return nil
 }
 
-func (t *tgtd) DeleteTarget(target *cfg.TargetCfg) error {
+func (t *tgtd) DeleteTarget(_target *target.Target) error {
 
-	tid := queryTargetId(target.TargetIQN)
+	tid := queryTargetId(_target.TargetIQN)
 	if tid == "-1" {
-		return errors.New(fmt.Sprintf("target %s not found", target.TargetIQN))
+		return errors.New(fmt.Sprintf("target %s not found", _target.TargetIQN))
 	}
 
-	tar := cfg.TargetCfg{
+	tar := target.Target{
 		TargetToolCli: t.tgt_adminCmd,
 		TargetId:      tid,
-		TargetIQN:     target.TargetIQN,
+		TargetIQN:     _target.TargetIQN,
 	}
 	return tar.Delete()
 }

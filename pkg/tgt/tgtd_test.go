@@ -5,7 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/ogre0403/go-lvm"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
+	"github.com/ogre0403/iscsi-target-api/pkg/target"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -22,7 +23,7 @@ func init() {
 		tgtimgCmd:     TGTIMG,
 		tgtadmCmd:     TGTADM,
 		targetConf:    "/tmp/iscsi-target-api.conf",
-		chap:          &cfg.CHAP{},
+		chap:          &model.CHAP{},
 		thinPool:      "pool0",
 	}
 	lvm.Initialize()
@@ -31,7 +32,7 @@ func init() {
 func TestNewTarget(t *testing.T) {
 	flag.Parse()
 
-	_, err := newTgtdTarget(&cfg.ManagerCfg{
+	_, err := newTgtdTarget(&model.ManagerCfg{
 		BaseImagePath: BASEIMGPATH,
 		TargetConf:    TARGETCONF,
 	})
@@ -65,7 +66,7 @@ func TestTgtd_AttachLun(t *testing.T) {
 		ThinProvision: false,
 	}
 
-	lc := &cfg.LunCfg{
+	lc := &model.Lun{
 		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
 		Volume:    &bv,
 	}
@@ -86,7 +87,7 @@ func TestTgtd_AttachLun(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		cfg := &cfg.TargetCfg{
+		cfg := &target.Target{
 			TargetIQN: lc.TargetIQN,
 		}
 		err := mgr.DeleteTarget(cfg)
@@ -112,7 +113,7 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 		ThinProvision: false,
 	}
 
-	lc := &cfg.LunCfg{
+	lc := &model.Lun{
 		TargetIQN: "iqn.2017-07.com.hiroom2:ogre",
 		Volume:    &bv,
 	}
@@ -133,7 +134,7 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 	}
 
 	t.Cleanup(func() {
-		cfg := &cfg.TargetCfg{
+		cfg := &target.Target{
 			TargetIQN: lc.TargetIQN,
 		}
 		err := mgr.DeleteTarget(cfg)

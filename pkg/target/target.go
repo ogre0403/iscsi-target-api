@@ -1,14 +1,15 @@
-package cfg
+package target
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	log "github.com/golang/glog"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"os/exec"
 )
 
-type TargetCfg struct {
+type Target struct {
 	TargetToolCli string `json:"-"`
 	TargetId      string `json:"-"`
 	TargetIQN     string `json:"targetIQN"`
@@ -16,7 +17,7 @@ type TargetCfg struct {
 
 // create target
 // eg. tgtadm --lld iscsi --op new --mode target --tid 1 -T iqn.2017-07.com.hiroom2:debian-9
-func (t *TargetCfg) Create() error {
+func (t *Target) Create() error {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
@@ -34,7 +35,7 @@ func (t *TargetCfg) Create() error {
 
 // delete target
 // eg. tgt-admin --delete tid=1
-func (t *TargetCfg) Delete() error {
+func (t *Target) Delete() error {
 
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command("/bin/sh", "-c",
@@ -53,7 +54,7 @@ func (t *TargetCfg) Delete() error {
 
 // setup LUN
 // eg. tgtadm --lld iscsi --op new --mode logicalunit --tid 1 --lun 1 -b /var/lib/iscsi/10m-$i.img
-func (t *TargetCfg) AddLun(volPath string) error {
+func (t *Target) AddLun(volPath string) error {
 	var stdout, stderr bytes.Buffer
 
 	cmd := exec.Command("/bin/sh", "-c",
@@ -72,7 +73,7 @@ func (t *TargetCfg) AddLun(volPath string) error {
 
 // setup ACL
 // eg. tgtadm --lld iscsi --op bind --mode target --tid 1 -I 192.168.1.1
-func (t *TargetCfg) SetACL(aclList []string) error {
+func (t *Target) SetACL(aclList []string) error {
 	var stdout, stderr bytes.Buffer
 
 	if len(aclList) == 0 {
@@ -107,7 +108,7 @@ func (t *TargetCfg) SetACL(aclList []string) error {
 // set CHAP
 // eg. tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr --outgoing
 //     tgtadm --lld iscsi --op bind --mode account --tid 1 --user benjr
-func (t *TargetCfg) AddCHAP(chap *CHAP) error {
+func (t *Target) AddCHAP(chap *model.CHAP) error {
 	var stdout, stderr bytes.Buffer
 
 	if chap.CHAPUser != "" && chap.CHAPPassword != "" {

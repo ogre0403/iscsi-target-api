@@ -5,7 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/go-lvm"
-	"github.com/ogre0403/iscsi-target-api/pkg/cfg"
+	"github.com/ogre0403/iscsi-target-api/pkg/model"
+	"github.com/ogre0403/iscsi-target-api/pkg/target"
 	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net/http"
@@ -21,13 +22,13 @@ const (
 )
 
 type APIServer struct {
-	config    *cfg.ServerCfg
+	config    *model.ServerCfg
 	router    *gin.Engine
 	targetMgr *tgt.TargetManager
 	locker    uint32
 }
 
-func NewAPIServer(m tgt.TargetManager, conf *cfg.ServerCfg) *APIServer {
+func NewAPIServer(m tgt.TargetManager, conf *model.ServerCfg) *APIServer {
 
 	log.Info("initialize lvm plugin")
 	err := lvm.Initialize()
@@ -95,11 +96,11 @@ func (s *APIServer) AttachLunAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&s.locker, 0)
 
-	var req cfg.LunCfg
+	var req model.Lun
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind LunCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind Lun fail: %s", err.Error())
 		return
 	}
 
@@ -148,11 +149,11 @@ func (s *APIServer) DeleteTargetAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&s.locker, 0)
 
-	var req cfg.TargetCfg
+	var req target.Target
 	err := c.BindJSON(&req)
 
 	if err != nil {
-		respondWithError(c, http.StatusBadRequest, "Bind TargetCfg fail: %s", err.Error())
+		respondWithError(c, http.StatusBadRequest, "Bind Target fail: %s", err.Error())
 		return
 	}
 
@@ -171,7 +172,7 @@ func (s *APIServer) DeleteTargetAPI(c *gin.Context) {
 
 func respondWithError(c *gin.Context, code int, format string, args ...interface{}) {
 	log.Errorf(format, args...)
-	resp := cfg.Response{
+	resp := model.Response{
 		Error:   true,
 		Message: fmt.Sprintf(format, args...),
 	}
@@ -180,7 +181,7 @@ func respondWithError(c *gin.Context, code int, format string, args ...interface
 }
 
 func responseWithOk(c *gin.Context) {
-	c.JSON(http.StatusOK, cfg.Response{
+	c.JSON(http.StatusOK, model.Response{
 		Error:   false,
 		Message: "Successful",
 	})
