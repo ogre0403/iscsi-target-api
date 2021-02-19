@@ -81,9 +81,12 @@ $ make run-in-docker
 * Create Thin provision Volume
 
     * LVM Thin provision volume
+        
+        **Note:** LVM thin provision needs pool parameter, this is defined in `iscsi-target-api` parameter.
+        
         ```bash
         $ curl -XPOST \
-        -d '{"type":"lvm","name":"test","size":8,"unit":"MiB","group":"vg-0", "thin":true, "pool":"pool0"}' \
+        -d '{"type":"lvm","name":"test","size":8,"unit":"MiB","group":"vg-0", "thin":true}' \
         --user admin:password \
         http://127.0.0.1:8811/createVol
         ```   

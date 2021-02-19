@@ -56,33 +56,28 @@ func newTgtdTarget(mgrCfg *cfg.ManagerCfg) (TargetManager, error) {
 
 func isCmdExist(t *tgtd) (bool, error) {
 
-	var stdout bytes.Buffer
-	cmd := exec.Command("/bin/sh", "-c", "command -v "+TGT_ADMIN)
-	cmd.Stdout = &stdout
+	CMD := []string{TGT_ADMIN, TGTIMG, TGTADM}
 
-	log.V(3).Info(cmd.String())
-	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGT_ADMIN))
-	}
-	t.tgt_adminCmd = strings.TrimSpace(string(stdout.Bytes()))
+	for i := 0; i < 3; i++ {
+		var stdout bytes.Buffer
+		cmd := exec.Command("/bin/sh", "-c", "command -v "+CMD[i])
+		cmd.Stdout = &stdout
 
-	var stdout1 bytes.Buffer
-	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTIMG)
-	cmd.Stdout = &stdout1
-	log.V(3).Info(cmd.String())
-	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGTIMG))
-	}
-	t.tgtimgCmd = strings.TrimSpace(string(stdout1.Bytes()))
+		log.V(3).Info(cmd.String())
+		if err := cmd.Run(); err != nil {
+			return false, errors.New(fmt.Sprintf("%s not found", CMD[i]))
+		}
 
-	var stdout2 bytes.Buffer
-	cmd = exec.Command("/bin/sh", "-c", "command -v "+TGTADM)
-	cmd.Stdout = &stdout2
-	log.V(3).Info(cmd.String())
-	if err := cmd.Run(); err != nil {
-		return false, errors.New(fmt.Sprintf("%s not found", TGTADM))
+		switch CMD[i] {
+		case TGT_ADMIN:
+			t.tgt_adminCmd = strings.TrimSpace(string(stdout.Bytes()))
+		case TGTIMG:
+			t.tgtimgCmd = strings.TrimSpace(string(stdout.Bytes()))
+		case TGTADM:
+			t.tgtadmCmd = strings.TrimSpace(string(stdout.Bytes()))
+		}
+
 	}
-	t.tgtadmCmd = strings.TrimSpace(string(stdout2.Bytes()))
 
 	return true, nil
 }
