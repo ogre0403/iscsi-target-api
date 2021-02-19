@@ -11,8 +11,8 @@ import (
 var tgtimgVol = volume.ImageVolume{
 	BasicVolume: volume.BasicVolume{
 		Type:  volume.VolumeTypeTGTIMG,
-		Group: "test",
-		Name:  "test",
+		Group: "test1",
+		Name:  "test1",
 		Size:  12,
 		Unit:  lvm.MiB,
 	},
@@ -51,7 +51,8 @@ func TestTargetCfg_AddLun(t *testing.T) {
 	e = target.AddLun(path)
 	assert.NoError(t, e)
 
-	tgtimgVol.Delete()
+	e = tgtimgVol.Delete()
+	assert.NoError(t, e)
 }
 
 func TestTargetCfg_ACL(t *testing.T) {

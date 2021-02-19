@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	log "github.com/golang/glog"
+	"github.com/ogre0403/iscsi-target-api/pkg/manager"
 	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"github.com/ogre0403/iscsi-target-api/pkg/rest"
-	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 )
 
 var (
@@ -22,10 +22,10 @@ var (
 func parserFlags() {
 
 	flag.Set("logtostderr", "true")
-	flag.StringVar(&c.TargetConf, "target-conf-file", tgt.TARGETCONF, "target config file path")
-	flag.StringVar(&c.BaseImagePath, "volume-image-path", tgt.BASEIMGPATH, "foldr to place volume image")
+	flag.StringVar(&c.TargetConf, "target-conf-file", manager.TARGETCONF, "target config file path")
+	flag.StringVar(&c.BaseImagePath, "volume-image-path", manager.BASEIMGPATH, "foldr to place volume image")
 	flag.StringVar(&c.ThinPool, "thin-pool-name", "pool0", "thin pool name, if LVM is used")
-	flag.StringVar(&targetManagerType, "manager-type", tgt.TgtdType, "target manager tool type")
+	flag.StringVar(&targetManagerType, "manager-type", manager.TgtdType, "target manager tool type")
 	flag.IntVar(&sc.Port, "api-port", 8811, "api server port")
 	flag.StringVar(&sc.Username, "api-username", "admin", "api admin name")
 	flag.StringVar(&sc.Password, "api-password", "password", "api admin password")
@@ -46,7 +46,7 @@ func main() {
 	parserFlags()
 	showVersion()
 
-	m, err := tgt.NewTarget(targetManagerType, c)
+	m, err := manager.NewTarget(targetManagerType, c)
 
 	if err != nil {
 		log.Fatalf("initialize target manager fail: %s", err.Error())

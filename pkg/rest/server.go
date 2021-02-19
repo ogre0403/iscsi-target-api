@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 	log "github.com/golang/glog"
 	"github.com/ogre0403/go-lvm"
+	"github.com/ogre0403/iscsi-target-api/pkg/manager"
 	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"github.com/ogre0403/iscsi-target-api/pkg/target"
-	"github.com/ogre0403/iscsi-target-api/pkg/tgt"
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net/http"
 	"strconv"
@@ -24,11 +24,11 @@ const (
 type APIServer struct {
 	config    *model.ServerCfg
 	router    *gin.Engine
-	targetMgr *tgt.TargetManager
+	targetMgr *manager.TargetManager
 	locker    uint32
 }
 
-func NewAPIServer(m tgt.TargetManager, conf *model.ServerCfg) *APIServer {
+func NewAPIServer(m manager.TargetManager, conf *model.ServerCfg) *APIServer {
 
 	log.Info("initialize lvm plugin")
 	err := lvm.Initialize()

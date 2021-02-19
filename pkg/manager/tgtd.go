@@ -1,4 +1,4 @@
-package tgt
+package manager
 
 import (
 	"bytes"
