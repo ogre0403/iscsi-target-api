@@ -1,4 +1,4 @@
-package manager
+package target
 
 import (
 	"github.com/stretchr/testify/assert"

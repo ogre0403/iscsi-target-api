@@ -15,7 +15,6 @@ var (
 		CHAP: &model.CHAP{},
 	}
 	sc                = &model.ServerCfg{}
-	port              int
 	targetManagerType string
 )
 
@@ -46,7 +45,7 @@ func main() {
 	parserFlags()
 	showVersion()
 
-	m, err := manager.NewTarget(targetManagerType, c)
+	m, err := manager.NewManager(targetManagerType, c)
 
 	if err != nil {
 		log.Fatalf("initialize target manager fail: %s", err.Error())

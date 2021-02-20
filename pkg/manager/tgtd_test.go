@@ -3,7 +3,6 @@ package manager
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"github.com/ogre0403/go-lvm"
 	"github.com/ogre0403/iscsi-target-api/pkg/model"
 	"github.com/ogre0403/iscsi-target-api/pkg/target"
@@ -32,7 +31,7 @@ func init() {
 func TestNewTarget(t *testing.T) {
 	flag.Parse()
 
-	_, err := newTgtdTarget(&model.ManagerCfg{
+	_, err := newTgtdMgr(&model.ManagerCfg{
 		BaseImagePath: BASEIMGPATH,
 		TargetConf:    TARGETCONF,
 	})
@@ -83,14 +82,13 @@ func TestTgtd_AttachLun(t *testing.T) {
 
 	err = mgr.AttachLun(lc)
 	if assert.Error(t, err) {
-		assert.Equal(t, errors.New(fmt.Sprintf("target %s already exist", lc.TargetIQN)), err)
+		assert.Equal(t, errors.New("tgtadm: this target already exists"), err)
 	}
 
 	t.Cleanup(func() {
-		cfg := &target.Target{
+		err := mgr.DeleteTarget(&target.BasicTarget{
 			TargetIQN: lc.TargetIQN,
-		}
-		err := mgr.DeleteTarget(cfg)
+		})
 		assert.NoError(t, err)
 	})
 
@@ -130,14 +128,13 @@ func TestTgtd_AttachLVMLun(t *testing.T) {
 
 	err = mgr.AttachLun(lc)
 	if assert.Error(t, err) {
-		assert.Equal(t, errors.New(fmt.Sprintf("target %s already exist", lc.TargetIQN)), err)
+		assert.Equal(t, errors.New("tgtadm: this target already exists"), err)
 	}
 
 	t.Cleanup(func() {
-		cfg := &target.Target{
+		err := mgr.DeleteTarget(&target.BasicTarget{
 			TargetIQN: lc.TargetIQN,
-		}
-		err := mgr.DeleteTarget(cfg)
+		})
 		assert.NoError(t, err)
 	})
 

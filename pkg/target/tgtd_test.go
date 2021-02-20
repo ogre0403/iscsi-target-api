@@ -23,10 +23,11 @@ var tgtimgVol = volume.ImageVolume{
 
 func TestTargetCfg_Create(t *testing.T) {
 
-	target := Target{
-		TargetToolCli: "tgtadm",
-		TargetId:      "99",
-		TargetIQN:     "iqn.test.com.local:local",
+	target := TgtdTarget{
+		BasicTarget: BasicTarget{
+			TargetId:  "99",
+			TargetIQN: "iqn.test.com.local:local",
+		},
 	}
 
 	e := target.Create()
@@ -42,10 +43,11 @@ func TestTargetCfg_AddLun(t *testing.T) {
 
 	path, _ := tgtimgVol.Path()
 
-	target := Target{
-		TargetToolCli: "tgtadm",
-		TargetId:      "99",
-		TargetIQN:     "iqn.test.com.local:local",
+	target := TgtdTarget{
+		BasicTarget: BasicTarget{
+			TargetId:  "99",
+			TargetIQN: "iqn.test.com.local:local",
+		},
 	}
 
 	e = target.AddLun(path)
@@ -56,24 +58,26 @@ func TestTargetCfg_AddLun(t *testing.T) {
 }
 
 func TestTargetCfg_ACL(t *testing.T) {
-	target := Target{
-		TargetToolCli: "tgtadm",
-		TargetId:      "99",
-		TargetIQN:     "iqn.test.com.local:local",
+	target := TgtdTarget{
+		BasicTarget: BasicTarget{
+			TargetId:  "99",
+			TargetIQN: "iqn.test.com.local:local",
+		},
 	}
 
-	e := target.SetACL([]string{})
+	e := target.AddACL([]string{})
 	assert.NoError(t, e)
-	e = target.SetACL([]string{"192.168.1.1", "192.168.1.2"})
+	e = target.AddACL([]string{"192.168.1.1", "192.168.1.2"})
 	assert.NoError(t, e)
 
 }
 
 func TestTargetCfg_AddCHAP(t *testing.T) {
-	target := Target{
-		TargetToolCli: "tgtadm",
-		TargetId:      "99",
-		TargetIQN:     "iqn.test.com.local:local",
+	target := TgtdTarget{
+		BasicTarget: BasicTarget{
+			TargetId:  "99",
+			TargetIQN: "iqn.test.com.local:local",
+		},
 	}
 
 	e := target.AddCHAP(&model.CHAP{})
@@ -88,10 +92,11 @@ func TestTargetCfg_AddCHAP(t *testing.T) {
 }
 
 func TestTargetCfg_Delete(t *testing.T) {
-	target := Target{
-		TargetToolCli: "tgt-admin",
-		TargetId:      "99",
-		TargetIQN:     "iqn.test.com.local:local",
+	target := TgtdTarget{
+		BasicTarget: BasicTarget{
+			TargetId:  "99",
+			TargetIQN: "iqn.test.com.local:local",
+		},
 	}
 
 	e := target.Delete()

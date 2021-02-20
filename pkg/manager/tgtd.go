@@ -10,7 +10,6 @@ import (
 	"github.com/ogre0403/iscsi-target-api/pkg/volume"
 	"net"
 	"os/exec"
-	"strconv"
 	"strings"
 )
 
@@ -32,7 +31,7 @@ type tgtd struct {
 	thinPool      string
 }
 
-func newTgtdTarget(mgrCfg *model.ManagerCfg) (TargetManager, error) {
+func newTgtdMgr(mgrCfg *model.ManagerCfg) (TargetManager, error) {
 
 	t := &tgtd{
 		baseImagePath: mgrCfg.BaseImagePath,
@@ -116,40 +115,35 @@ func (t *tgtd) AttachLun(lun *model.Lun) error {
 		}
 	}
 
-	if queryTargetId(lun.TargetIQN) != "-1" {
-		return errors.New(fmt.Sprintf("target %s already exist", lun.TargetIQN))
+	basic := target.BasicTarget{
+		TargetIQN: lun.TargetIQN,
 	}
 
-	tid := queryMaxTargetId()
-	target := target.Target{
-		TargetToolCli: t.tgtadmCmd,
-		TargetId:      strconv.Itoa(tid + 1),
-		TargetIQN:     lun.TargetIQN,
-	}
+	tgtdTarget := target.NewTgtdTarget(&basic)
 
-	if err := target.Create(); err != nil {
+	if err := tgtdTarget.Create(); err != nil {
 		return err
 	}
 
-	if err := target.AddLun(volPath); err != nil {
+	if err := tgtdTarget.AddLun(volPath); err != nil {
 		log.Infof("target %s create fail because LUN %s can not be added, rollback target creation",
-			target.TargetIQN, volPath)
-		t.DeleteTarget(&target)
+			tgtdTarget.TargetIQN, volPath)
+		t.DeleteTarget(&basic)
 		return err
 	}
 
-	if err := target.SetACL(lun.AclIpList); err != nil {
+	if err := tgtdTarget.AddACL(lun.AclIpList); err != nil {
 		log.Infof("target %s create fail because ACL can not be added, rollback target creation",
-			target.TargetIQN)
-		t.DeleteTarget(&target)
+			tgtdTarget.TargetIQN)
+		t.DeleteTarget(&basic)
 		return err
 	}
 
 	if lun.EnableChap {
-		if err := target.AddCHAP(t.chap); err != nil {
+		if err := tgtdTarget.AddCHAP(t.chap); err != nil {
 			log.Infof("target %s create fail because CHAP can not be added, rollback target creation",
-				target.TargetIQN)
-			t.DeleteTarget(&target)
+				tgtdTarget.TargetIQN)
+			t.DeleteTarget(&basic)
 			return err
 		}
 	}
@@ -157,19 +151,9 @@ func (t *tgtd) AttachLun(lun *model.Lun) error {
 	return nil
 }
 
-func (t *tgtd) DeleteTarget(_target *target.Target) error {
-
-	tid := queryTargetId(_target.TargetIQN)
-	if tid == "-1" {
-		return errors.New(fmt.Sprintf("target %s not found", _target.TargetIQN))
-	}
-
-	tar := target.Target{
-		TargetToolCli: t.tgt_adminCmd,
-		TargetId:      tid,
-		TargetIQN:     _target.TargetIQN,
-	}
-	return tar.Delete()
+func (t *tgtd) DeleteTarget(bt *target.BasicTarget) error {
+	tgtTarget := target.NewTgtdTarget(bt)
+	return tgtTarget.Delete()
 }
 
 func (t *tgtd) DeleteVolume(vol *volume.BasicVolume) error {

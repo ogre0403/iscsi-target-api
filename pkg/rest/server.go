@@ -149,7 +149,7 @@ func (s *APIServer) DeleteTargetAPI(c *gin.Context) {
 	}
 	defer atomic.StoreUint32(&s.locker, 0)
 
-	var req target.Target
+	var req target.BasicTarget
 	err := c.BindJSON(&req)
 
 	if err != nil {
