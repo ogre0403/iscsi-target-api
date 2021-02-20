@@ -17,7 +17,6 @@ var tgtimgVol = volume.ImageVolume{
 		Unit:  lvm.MiB,
 	},
 
-	TgtimgCmd:     "tgtimg",
 	BaseImagePath: "/var/lib/iscsi",
 }
 

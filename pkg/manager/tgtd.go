@@ -208,7 +208,6 @@ func (t *tgtd) NewVolume(basic *volume.BasicVolume) (volume.Volume, error) {
 		return &volume.ImageVolume{
 			BasicVolume:   *basic,
 			BaseImagePath: t.baseImagePath,
-			TgtimgCmd:     t.tgtimgCmd,
 		}, nil
 	default:
 		log.Infof("%s is not supported volume type", basic.Type)

@@ -11,9 +11,10 @@ import (
 	"os/exec"
 )
 
+const Tgtimg = "tgtimg"
+
 type ImageVolume struct {
 	BasicVolume
-	TgtimgCmd     string
 	BaseImagePath string
 }
 
@@ -51,7 +52,7 @@ func (v *ImageVolume) Create() error {
 	}
 
 	cmd := exec.Command("/bin/sh", "-c",
-		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s %s --file %s ", v.TgtimgCmd, sizeUnit, thin, fullImgPath),
+		fmt.Sprintf("%s --op new --device-type disk --type disk --size %s %s --file %s ", Tgtimg, sizeUnit, thin, fullImgPath),
 	)
 
 	log.V(3).Info(cmd.String())
